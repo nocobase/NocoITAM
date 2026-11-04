@@ -12,9 +12,11 @@ import DevicesListPage from '../../client/pages/itam/devices/devices-list.js';
 // (2026-11-03); its 型号 filter reaches the request, which it did not before.
 
 const state = vi.hoisted(() => ({
+  phone: false,
   lists: [] as { path: string; query: ListQuery }[],
 }));
 
+vi.mock('#hooks/use-mobile', () => ({ useIsMobile: () => state.phone }));
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) =>
@@ -83,6 +85,18 @@ const lastFilter = () =>
 
 beforeEach(() => {
   state.lists = [];
+});
+
+// A phone reads the table (2026-11-03), even from an address asking for the
+// board: a column of it took two thirds of the screen.
+it('has no board and no switch to it on a phone', () => {
+  state.phone = true;
+  land('?layout=board');
+  expect(
+    screen.queryByRole('radio', { name: 'common.boardLayout' }),
+  ).toBeNull();
+  expect(state.lists.at(-1)?.query.pageSize).not.toBe(1);
+  state.phone = false;
 });
 
 it('filters by status from the menu and drops it through its chip', async () => {

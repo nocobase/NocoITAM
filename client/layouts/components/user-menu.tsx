@@ -14,6 +14,7 @@ import {
 } from '#components/ui/dropdown-menu';
 
 import { LanguageSwitcher } from './language-switcher.js';
+import { ThemeMenu } from './theme-menu.js';
 
 export function UserMenu(): ReactElement {
   const {
@@ -74,6 +75,9 @@ export function UserMenu(): ReactElement {
         </div>
         <DropdownMenuSeparator />
         <LanguageSwitcher />
+        {/* Application change (ITAM, 2026-11-03): 外观 here, not in the
+            header. */}
+        <ThemeMenu />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={isLoggingOut}

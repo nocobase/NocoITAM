@@ -350,6 +350,8 @@ template's roomier spacing narrowed the column's text.
   scrolling their own cards. The page reads title, 需要关注 (its cards a
   grid that fills each row), then a bar of the counts and the switches
   pinned atop as the page scrolls (a sticky bar whose measured height the
-  board's leaves); the title and 需要关注 scroll away. The bar is pinned
-  from `md` only (2026-11-03): on a phone its counts wrap to four lines or
-  five and, pinned, covered half the screen, so there it scrolls away too.
+  board's leaves); the title and 需要关注 scroll away. On a phone
+  (2026-11-03) the page reads the list whatever view was chosen, with no
+  看板 / 列表 switch, and the bar is one line on a ground of its own, the
+  counts scrolling sideways beside 全部 / 我的: wrapped, they took four
+  lines or five and, pinned, covered half the screen.

@@ -93,23 +93,24 @@ export default function WorkbenchPage(): ReactElement {
   const { t } = useTranslation();
   const cards = useWorkCards();
   const loading = useMyWork().isLoading;
-  const [view, setView] = useState<WorkView>(readView);
+  const [chosen, setChosen] = useState<WorkView>(readView);
+  // A phone reads the list (2026-11-03): a column of the board took two
+  // thirds of the screen, the next cut off at the edge and each one's empty
+  // foot running down the window. Its choice of view is kept for a wider
+  // screen.
+  const phone = useIsMobile();
+  const view = phone ? 'list' : chosen;
   // Held on its empty space, the board drags sideways (useDragPan).
   const pan = useDragPan();
   const layout = view === 'board' ? 'column' : 'section';
   // The bar pinned atop: its height is what the board leaves it.
   const barRef = useRef<HTMLDivElement>(null);
-  const [measured, setMeasured] = useState(0);
-  // Pinned from `md` only (2026-11-03): on a phone its counts wrap to four
-  // lines or five and, pinned, covered half the screen, the board's cards
-  // showing through between the pills. There it scrolls away with the page.
-  const pinned = !useIsMobile();
-  const bar = pinned ? measured : 0;
+  const [bar, setBar] = useState(0);
   useEffect(() => {
     const element = barRef.current;
     if (!element || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(() =>
-      setMeasured(element.getBoundingClientRect().height),
+      setBar(element.getBoundingClientRect().height),
     );
     observer.observe(element);
     return () => observer.disconnect();
@@ -144,24 +145,27 @@ export default function WorkbenchPage(): ReactElement {
         // their own.
         // Its own padding the room either side (2026-10-22): the page's
         // spacing on top of it set the counts far from the band and board.
-        className={cn(
-          'top-0 z-10 -mx-6 mb-1 flex flex-wrap-reverse items-end justify-between gap-x-4 gap-y-2 px-6 py-2.5',
-          pinned && 'sticky',
-        )}
+        // On a phone (2026-11-03) one line, the counts scrolling sideways
+        // beside the switches, and a ground of its own: wrapped, the counts
+        // took four lines or five and, pinned, covered half the screen with
+        // the cards showing between the pills.
+        className='sticky top-0 z-10 -mx-6 mb-1 flex items-end justify-between gap-x-4 gap-y-2 px-6 py-2.5 max-md:items-center max-md:gap-x-2 max-md:bg-background/90 max-md:backdrop-blur-sm md:flex-wrap-reverse'
       >
         {loading ? <span /> : <WorkCounts cards={cards} offset={bar + 8} />}
         <div className='ml-auto flex shrink-0 items-center gap-2'>
-          <WorkViewToggle
-            value={view}
-            onChange={(next) => {
-              setView(next);
-              try {
-                localStorage.setItem(VIEW_KEY, next);
-              } catch {
-                // Storage unavailable: kept until the page is left.
-              }
-            }}
-          />
+          {phone ? null : (
+            <WorkViewToggle
+              value={view}
+              onChange={(next) => {
+                setChosen(next);
+                try {
+                  localStorage.setItem(VIEW_KEY, next);
+                } catch {
+                  // Storage unavailable: kept until the page is left.
+                }
+              }}
+            />
+          )}
           <WorkScopeToggle />
         </div>
       </div>
@@ -231,7 +235,10 @@ function WorkCounts({
   // Each a small capsule (2026-10-17): the name, then its count in the pill
   // the columns' headings wear, so the line reads as the columns it leads to.
   return (
-    <nav className='flex min-w-0 flex-1 basis-80 flex-wrap items-center gap-1.5'>
+    // One line on a phone, scrolled sideways (2026-11-03): wrapped, nine
+    // counts took three lines above the first card. No scrollbar: its room
+    // under the pills set them above the switches' line.
+    <nav className='flex min-w-0 flex-1 basis-80 items-center gap-1.5 max-md:-ml-6 max-md:overflow-x-auto max-md:py-0.5 max-md:pl-6 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:flex-wrap'>
       {cards.map((card) => (
         <button
           key={card.key}

@@ -1,3 +1,5 @@
+import { tabClass } from '#components/tab-class';
+import { TabRow } from '#components/tab-row';
 import type { LucideIcon } from 'lucide-react';
 import { useContext, type ReactElement, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -160,7 +162,7 @@ export function DetailPage({
             </div>
           </div>
           {headerActions ? (
-            <div className='flex shrink-0 flex-wrap items-center gap-2'>
+            <div className='flex max-w-full flex-wrap items-center gap-2'>
               {headerActions}
             </div>
           ) : null}
@@ -225,14 +227,22 @@ export function DetailPage({
                   rule, the open tab in the brand colour (2026-10-22) over a 2px line of it,
                   the others muted until hovered, each led by its icon and
                   followed by its count in plain muted figures. The first
-                  tab's text lines up with the content below. */}
-              <nav
-                className='flex w-full flex-wrap gap-x-5 border-b border-border'
-                aria-label='tabs'
+                  tab's text lines up with the content below. One line,
+                  scrolling sideways when they do not fit (TabRow), and no
+                  icons on a phone (2026-11-04). */}
+              <TabRow
+                links
+                label='tabs'
+                selected={location.pathname}
+                tabCount={tabs.length}
               >
                 {tabs.map((tab) => {
                   const Icon = tab.icon ?? TAB_ICONS[tab.key];
                   const opens = tab.key === landing;
+                  // The landing tab at its own address, which its link to
+                  // `.` does not call active.
+                  const landed =
+                    opens && location.pathname.endsWith(`/${tab.to}`);
                   return (
                     <NavLink
                       key={tab.key}
@@ -244,18 +254,14 @@ export function DetailPage({
                       // A tab is a view of the same record, not a page:
                       // 返回 and the browser's back leave the record.
                       replace
-                      className={({ isActive }) =>
-                        cn(
-                          '-mb-px flex h-10 items-center gap-1.5 border-b-2 text-sm font-medium transition-colors outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
-                          isActive ||
-                            (opens && location.pathname.endsWith(`/${tab.to}`))
-                            ? 'border-primary text-primary'
-                            : 'border-transparent text-foreground hover:text-primary',
-                        )
-                      }
+                      data-open-tab={landed || undefined}
+                      className={({ isActive }) => tabClass(isActive || landed)}
                     >
                       {Icon ? (
-                        <Icon aria-hidden='true' className='size-4' />
+                        <Icon
+                          aria-hidden='true'
+                          className='size-4 max-md:hidden'
+                        />
                       ) : null}
                       {tab.label}
                       {tab.count !== undefined ? (
@@ -266,7 +272,7 @@ export function DetailPage({
                     </NavLink>
                   );
                 })}
-              </nav>
+              </TabRow>
               {/* An empty tab says so in a shorter box than an empty list
                   page: the tab is one of several on a page. */}
               <div className='[&_[data-slot=empty-state]]:py-6'>{children}</div>

@@ -25,6 +25,7 @@ import { ImportExport } from '@/components/itam/import-export';
 import { OverdueBadge } from '@/components/itam/overdue-badge';
 import { SegmentedControl } from '@/components/itam/segmented-control';
 import { createStatusBoard } from '@/components/itam/status-board';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { HolderIcon } from '@/components/itam/device-relation';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { Badge } from '@/components/ui/badge';
@@ -289,7 +290,10 @@ function DevicesList(): ReactElement {
   const found = foundIds(params);
   // 看板 or 列表 (2026-10-22): the table unless the board is chosen, and
   // always for the devices Asset Steward found.
-  const board = params.get('layout') === 'board' && !found;
+  // A phone reads the table (2026-11-03, as the workbench does): a column
+  // of the board took two thirds of the screen and cut off the next.
+  const phone = useIsMobile();
+  const board = params.get('layout') === 'board' && !found && !phone;
 
   const setParam = (updates: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params);
@@ -464,7 +468,7 @@ function DevicesList(): ReactElement {
         total={list.data?.total}
         actions={
           <>
-            {found ? null : (
+            {found || phone ? null : (
               <SegmentedControl
                 value={board ? 'board' : 'table'}
                 onChange={(next) =>

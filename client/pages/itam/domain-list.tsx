@@ -1,4 +1,5 @@
 import { useCan } from '@nocobase/app-plugin-authorization/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AwaitingMeTag } from '@/components/itam/awaiting-me-tag';
 import { useTranslation } from '@nocobase/i18n/client';
 import {
@@ -164,8 +165,14 @@ function DomainList({
   // table, whatever the page's own layout: a board or a tree of three
   // records would scatter them across columns and branches.
   const found = foundIds(params);
+  // A phone reads the table (2026-11-03, as the workbench does): a column
+  // of the board took two thirds of the screen and cut off the next.
+  const phone = useIsMobile();
   const boardable =
-    Boolean(domain.Board) && (!filter.view || filter.view === 'mine') && !found;
+    Boolean(domain.Board) &&
+    (!filter.view || filter.view === 'mine') &&
+    !found &&
+    !phone;
   // A tree is its own view: it carries search, filters and counts itself,
   // and the list request only answers the total in the header.
   const layout =

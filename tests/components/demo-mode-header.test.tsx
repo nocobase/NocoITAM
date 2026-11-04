@@ -6,7 +6,6 @@ import { expect, it, vi } from 'vitest';
 
 import { HeaderActions } from '../../client/layouts/components/header-actions.js';
 
-vi.mock('../../client/theme/index.js', () => ({ ThemeSettings: () => null }));
 vi.mock('../../client/layouts/agent-chat.js', () => ({
   AgentChatButton: () => null,
 }));

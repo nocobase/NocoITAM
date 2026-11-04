@@ -1,4 +1,5 @@
 import {
+  cleanup,
   act,
   fireEvent,
   render,
@@ -19,10 +20,12 @@ import { DomainListPage } from '../../client/pages/itam/domain-list.js';
 // the address (2026-11-03, after NocoSupport's lists).
 
 const state = vi.hoisted(() => ({
+  phone: false,
   lists: [] as { path: string; query: ListQuery }[],
   requests: [] as { path: string; query?: Record<string, unknown> }[],
 }));
 
+vi.mock('#hooks/use-mobile', () => ({ useIsMobile: () => state.phone }));
 vi.mock('@nocobase/app-plugin-authorization/client', () => ({
   useCan: () => ({ can: false, isPending: false }),
 }));
@@ -115,7 +118,7 @@ function Address(): ReactElement {
   return <output aria-label='address'>{useLocation().search}</output>;
 }
 
-function land(search = '') {
+function land(search = '', domain = DOMAIN) {
   return render(
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter initialEntries={[`/disposals${search}`]}>
@@ -124,7 +127,7 @@ function land(search = '') {
             path='/disposals'
             element={
               <>
-                <DomainListPage domain={DOMAIN} />
+                <DomainListPage domain={domain} />
                 <Address />
               </>
             }
@@ -149,6 +152,24 @@ async function openDimension(label: string) {
 beforeEach(() => {
   state.lists = [];
   state.requests = [];
+});
+
+// A phone reads the table of a list that defaults to its board (2026-11-03).
+it('has no board and no switch to it on a phone', () => {
+  const domain = { ...DOMAIN, Board: () => <p>the board</p> };
+  land('', domain);
+  expect(screen.getByText('the board')).toBeInTheDocument();
+  expect(
+    screen.getByRole('radio', { name: 'common.boardLayout' }),
+  ).toBeInTheDocument();
+  cleanup();
+  state.phone = true;
+  land('', domain);
+  expect(screen.queryByText('the board')).toBeNull();
+  expect(
+    screen.queryByRole('radio', { name: 'common.boardLayout' }),
+  ).toBeNull();
+  state.phone = false;
 });
 
 it('puts a chosen value in the address and its chip takes it out', async () => {

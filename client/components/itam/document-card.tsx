@@ -19,7 +19,10 @@ export type DocumentTone = keyof typeof TONES;
  * and the document's own words — an order's description, a repair's
  * fault — on the first line; its type and the details in small text
  * underneath; and at the right the status over the amount, so the figures
- * line up down the list.
+ * line up down the list. Narrower than `@lg` (a phone, 2026-11-04) the icon
+ * goes, the list's heading already saying the kind, and each part takes a
+ * line of its own under the number and status: beside the icon and the
+ * figures the words had a fifth of the card and were cut to "Bo…".
  */
 export function DocumentCard({
   icon: Icon,
@@ -53,59 +56,77 @@ export function DocumentCard({
 }): ReactElement {
   const line = details.filter(Boolean);
   return (
-    <li className='flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40'>
+    <li className='grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-4 py-3 transition-colors hover:bg-muted/40 @lg:flex @lg:items-center @lg:gap-3'>
       <span
-        className={`flex size-9 shrink-0 items-center justify-center rounded-full ${TONES[tone]}`}
+        className={`hidden size-9 shrink-0 items-center justify-center rounded-full @lg:flex ${TONES[tone]}`}
       >
         <Icon className='size-4' aria-hidden='true' strokeWidth={1.75} />
       </span>
-      <div className='min-w-0 flex-1 space-y-1'>
-        <div className='flex min-w-0 items-baseline gap-2'>
-          <RecordLink to={to} className='shrink-0 font-medium text-link'>
+      <div className='contents @lg:block @lg:min-w-0 @lg:flex-1 @lg:space-y-1'>
+        <div className='contents @lg:flex @lg:min-w-0 @lg:items-baseline @lg:gap-2'>
+          <RecordLink
+            to={to}
+            className='col-start-1 row-start-1 min-w-0 self-center font-medium text-link @lg:shrink-0'
+          >
             {number}
           </RecordLink>
           {title ? (
-            <span className='min-w-0 truncate text-foreground' title={title}>
+            <span
+              className='col-span-2 line-clamp-2 min-w-0 text-foreground @lg:line-clamp-none @lg:truncate'
+              title={title}
+            >
               {title}
             </span>
           ) : null}
         </div>
         {kind || line.length > 0 ? (
-          <p className='flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground'>
-            {kind ? (
-              <span className='rounded bg-muted px-1.5 py-px text-foreground/80'>
-                {kind}
-              </span>
-            ) : null}
-            {line.map((item, index) => (
-              <span
-                className='inline-flex items-center gap-1.5'
-                key={String(item)}
-              >
-                {/* A drawn dot, not "·": in a Chinese font the character
-                    is full width and doubled the gap on each side
-                    (2026-10-23). */}
-                {index > 0 || kind ? (
-                  <span
-                    aria-hidden='true'
-                    className='size-[3px] shrink-0 rounded-full bg-muted-foreground/40'
-                  />
-                ) : null}
-                <span className='break-words'>{item}</span>
-              </span>
-            ))}
-          </p>
+          // Each dot sits left of its entry, in the gap, and the frame clips
+          // the one on an entry that wrapped to the start of a line
+          // (2026-11-04): a dot left there hung beside the text.
+          <div className='col-span-2 overflow-hidden'>
+            <p className='-ml-3 flex flex-wrap items-center gap-y-0.5 text-xs text-muted-foreground'>
+              {kind ? (
+                <span className='ml-3 min-w-0 rounded bg-muted px-1.5 py-px text-foreground/80'>
+                  {kind}
+                </span>
+              ) : null}
+              {line.map((item, index) => (
+                <span className='relative ml-3 min-w-0' key={String(item)}>
+                  {/* A drawn dot, not "·": in a Chinese font the character
+                      is full width and doubled the gap on each side
+                      (2026-10-23). */}
+                  {index > 0 || kind ? (
+                    <span
+                      aria-hidden='true'
+                      className='absolute top-[calc(0.5lh-1.5px)] -left-[7.5px] size-[3px] rounded-full bg-muted-foreground/40'
+                    />
+                  ) : null}
+                  <span className='break-words'>{item}</span>
+                </span>
+              ))}
+            </p>
+          </div>
         ) : null}
       </div>
       {status || amount ? (
-        <div className='flex shrink-0 flex-col items-end gap-1'>
-          {status}
+        <div className='contents @lg:flex @lg:shrink-0 @lg:flex-col @lg:items-end @lg:gap-1'>
+          {status ? (
+            <div className='col-start-2 row-start-1 flex justify-end'>
+              {status}
+            </div>
+          ) : null}
           {amount ? (
-            <span className='text-sm font-medium tabular-nums'>{amount}</span>
+            <span className='col-span-2 text-sm font-medium tabular-nums'>
+              {amount}
+            </span>
           ) : null}
         </div>
       ) : null}
-      {action ? <div className='shrink-0 self-center'>{action}</div> : null}
+      {action ? (
+        <div className='col-span-2 mt-1 @lg:mt-0 @lg:shrink-0 @lg:self-center'>
+          {action}
+        </div>
+      ) : null}
     </li>
   );
 }
@@ -117,7 +138,7 @@ export function DocumentList({
   readonly children: ReactNode;
 }): ReactElement {
   return (
-    <ul className='divide-y divide-border overflow-hidden rounded-lg border border-border bg-card text-sm'>
+    <ul className='@container divide-y divide-border overflow-hidden rounded-lg border border-border bg-card text-sm'>
       {children}
     </ul>
   );

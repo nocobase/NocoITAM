@@ -8,6 +8,7 @@ import type { MyWorkItem } from '../../client/lib/itam/workbench.js';
 import { setWorkScope } from '../../client/lib/itam/work-scope.js';
 
 const state = vi.hoisted(() => ({
+  phone: false,
   items: [] as MyWorkItem[],
   /** Full rows per list path, as the board cards read them; none by default. */
   rows: {} as Record<string, Record<string, unknown>[]>,
@@ -15,7 +16,7 @@ const state = vi.hoisted(() => ({
   reminders: [] as Record<string, unknown>[],
   opened: vi.fn(),
 }));
-vi.mock('#hooks/use-mobile', () => ({ useIsMobile: () => false }));
+vi.mock('#hooks/use-mobile', () => ({ useIsMobile: () => state.phone }));
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
 }));
@@ -160,6 +161,18 @@ it('folds 需要关注 after five rows in one column', () => {
     within(band).queryByRole('button', { name: 'workbench.attentionShowMore' }),
   ).toBeNull();
   state.reminders = [];
+});
+
+// A phone reads the list, whichever view was chosen (2026-11-03): a column of
+// the board took two thirds of the screen and cut off the next.
+it('has no board and no switch to it on a phone', () => {
+  state.phone = true;
+  state.items = [];
+  show();
+  expect(
+    screen.queryByRole('radio', { name: 'workbench.view.board' }),
+  ).toBeNull();
+  state.phone = false;
 });
 
 it('shows both kinds of approval in one column, each tagged', () => {

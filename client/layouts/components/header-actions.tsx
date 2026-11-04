@@ -2,7 +2,6 @@ import type { ReactElement } from 'react';
 import { DemoModeMenu } from '@nocobase/app-plugin-demo-mode/client/menu';
 import { TooltipProvider } from '#components/ui/tooltip';
 
-import { ThemeSettings } from '../../theme/index.js';
 import { AgentChatButton } from '../agent-chat.js';
 import { UserMenu } from './user-menu.js';
 
@@ -19,8 +18,9 @@ export function HeaderActions(): ReactElement {
             panel where it was left and closes it again. */}
         <AgentChatButton />
         {/* Application change (ITAM, 2026-10-17): no 通知 bell — notices
-            are read in 收件箱, whose sidebar entry counts the unread. */}
-        <ThemeSettings />
+            are read in 收件箱, whose sidebar entry counts the unread.
+            No palette button either (2026-11-03): 外观 is in the account
+            menu (`ThemeMenu`). */}
         <UserMenu />
       </div>
     </TooltipProvider>

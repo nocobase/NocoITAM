@@ -108,18 +108,21 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                   the assistant's panel, header and page together
                   (styles.css). */}
               <div className='itam-page-main flex min-w-0 flex-1 flex-col'>
-                <LayoutHeader className='sticky top-0 z-40 justify-between'>
-                  <div className='flex min-w-0 items-center gap-3'>
+                <LayoutHeader className='sticky top-0 z-40 justify-between gap-2'>
+                  {/* Application change (ITAM, 2026-11-03, as NocoCRM's): on
+                      a phone the brand sits closer to the sidebar's toggle,
+                      the toggle's own padding being gap enough. */}
+                  <div className='flex min-w-0 items-center gap-1.5 sm:gap-3'>
                     <AppSidebarToggle />
-                    {/* Application change (ITAM, 2026-10-22): the mark alone
-                        on a phone-width pane, where the full logo ran under
-                        the header's buttons; the logo from `sm` until the
-                        sidebar shows it. */}
-                    <div className='shrink-0 sm:hidden'>
-                      <AppBrand compact />
-                    </div>
-                    <div className='hidden sm:block md:hidden'>
-                      <AppBrand />
+                    {/* Application change (ITAM): the full logo until the
+                        sidebar shows it at `md` — on a phone too since
+                        2026-11-03, when the palette button left the header
+                        for the account menu and made room for it (the mark
+                        alone there from 2026-10-22), a size smaller below
+                        `sm` and smaller still where even that has no room
+                        (app-brand.tsx), as NocoCRM's. */}
+                    <div className='min-w-0 md:hidden'>
+                      <AppBrand small />
                     </div>
                     {/* Application change (ITAM, 2026-11-03, as NocoCRM's):
                         no page name on a phone-width pane, where Demo Mode's

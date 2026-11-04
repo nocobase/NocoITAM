@@ -310,6 +310,28 @@ while the window stays wide, so a page's own splits use container
 breakpoints (`@3xl:grid-cols-2`), not viewport ones (`lg:`). The workbench
 and reports do; `DetailPage` already had its own container.
 
+## On a phone
+
+Below `useIsMobile`'s 768px a list with a board reads as its table and offers
+no switch to the board, the workbench as its list (2026-11-03): a column took
+two thirds of the screen and cut off the next (`domain-list.tsx`,
+`devices-list.tsx`, `workbench.tsx`). A table keeps its columns and scrolls
+sideways inside its own frame; that has not been changed. A page's and a
+detail page's header actions wrap at the page's width rather than keep theirs,
+which ran 创建 past the screen's edge.
+
+Underlined tabs draw on `TabRow` with `tabClass` (`client/components/tab-row.tsx`,
+`tab-class.ts`; 2026-11-04, as NocoCRM's): one line that never wraps, scrolling
+sideways with no scrollbar, an edge with more beyond it fading out, the open tab
+centred on arriving, when it changes and when a tab changes width (a count
+arriving) unless the reader has moved the row, and the arrow keys, Home and End
+moving between tabs and opening the one landed on. Their icons go below `md`.
+A record's tabs (`DetailPage`), `LinkTabs` and MDM 核对's use it; a bar of two or
+three short tabs that fit, such as 收件箱's or Agent 工作's, does not need it.
+Bars that are really separate pages opened now and then, 设置 and 报表, are a
+`Select` on a phone, choosing with a replaced address; an icon in an item needs a
+`flex items-center gap-2` wrapper or it sits slightly high.
+
 ## Table cells stay on one line
 
 A shadcn `TableCell` never wraps (`whitespace-nowrap`), so one long value —

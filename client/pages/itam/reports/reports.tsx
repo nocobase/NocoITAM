@@ -9,10 +9,20 @@ import { ReportFilterBar } from '@/components/itam/report-filters';
 import { ReportSectionCard } from '@/components/itam/report-section';
 import { StatCards } from '@/components/itam/stat-cards';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApi, useItamSettings } from '@/lib/itam/api';
 import { formatMoney, text } from '@/lib/itam/format';
 import { REPORT_GROUPS, reportChartOf } from '@/lib/itam/report-charts';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import {
   downloadReportCsv,
@@ -56,6 +66,7 @@ export default function ReportsPage(): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
   const [params, setParams] = useSearchParams();
+  const phone = useIsMobile();
   const requested = params.get('report');
   const name: ReportName = (REPORT_NAMES as readonly string[]).includes(
     requested ?? '',
@@ -80,37 +91,71 @@ export default function ReportsPage(): ReactElement {
         description={t('reports.description')}
       />
       <div className='grid gap-6 @3xl:grid-cols-[11rem_minmax(0,1fr)]'>
-        <nav
-          aria-label={t('reports.title')}
-          className='flex gap-4 overflow-x-auto @3xl:flex-col @3xl:gap-5 @3xl:overflow-visible'
-        >
-          {REPORT_GROUPS.map((group) => (
-            <div key={group.key} className='min-w-max space-y-1 @3xl:min-w-0'>
-              <p className='px-2 text-xs font-medium text-muted-foreground'>
-                {t(`reports.groups.${group.key}`)}
-              </p>
-              <ul className='flex gap-1 @3xl:flex-col'>
-                {group.reports.map((entry) => (
-                  <li key={entry}>
-                    <button
-                      type='button'
-                      aria-current={entry === name ? 'page' : undefined}
-                      className={cn(
-                        'w-full rounded-md px-2 py-1.5 text-left text-sm whitespace-nowrap hover:bg-muted',
-                        entry === name && 'bg-muted font-medium',
-                      )}
-                      onClick={() =>
-                        setParams({ report: entry }, { replace: true })
-                      }
-                    >
+        {/* A phone chooses from a menu (2026-11-04, as NocoCRM's settings):
+            a report is a page opened now and then, and the open one sat off
+            the edge of a row scrolling sideways. */}
+        {phone ? (
+          <Select
+            items={REPORT_GROUPS.flatMap((group) =>
+              group.reports.map((entry) => ({
+                value: entry,
+                label: t(`reports.names.${entry}`),
+              })),
+            )}
+            value={name}
+            onValueChange={(entry) => {
+              if (entry) setParams({ report: entry }, { replace: true });
+            }}
+          >
+            <SelectTrigger aria-label={t('reports.title')} className='w-full'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REPORT_GROUPS.map((group) => (
+                <SelectGroup key={group.key}>
+                  <SelectLabel>{t(`reports.groups.${group.key}`)}</SelectLabel>
+                  {group.reports.map((entry) => (
+                    <SelectItem key={entry} value={entry}>
                       {t(`reports.names.${entry}`)}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </nav>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <nav
+            aria-label={t('reports.title')}
+            className='flex gap-4 overflow-x-auto @3xl:flex-col @3xl:gap-5 @3xl:overflow-visible'
+          >
+            {REPORT_GROUPS.map((group) => (
+              <div key={group.key} className='min-w-max space-y-1 @3xl:min-w-0'>
+                <p className='px-2 text-xs font-medium text-muted-foreground'>
+                  {t(`reports.groups.${group.key}`)}
+                </p>
+                <ul className='flex gap-1 @3xl:flex-col'>
+                  {group.reports.map((entry) => (
+                    <li key={entry}>
+                      <button
+                        type='button'
+                        aria-current={entry === name ? 'page' : undefined}
+                        className={cn(
+                          'w-full rounded-md px-2 py-1.5 text-left text-sm whitespace-nowrap hover:bg-muted',
+                          entry === name && 'bg-muted font-medium',
+                        )}
+                        onClick={() =>
+                          setParams({ report: entry }, { replace: true })
+                        }
+                      >
+                        {t(`reports.names.${entry}`)}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+        )}
 
         <div className='min-w-0 space-y-4'>
           <div className='flex flex-wrap items-start justify-between gap-3'>

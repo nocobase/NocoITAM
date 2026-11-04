@@ -2,6 +2,8 @@ import { screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import enUS from '../../client/locales/en-US.js';
 
+vi.mock('#hooks/use-mobile', () => ({ useIsMobile: () => false }));
+
 afterEach(() => {
   document.getElementById('nocobase-runtime-config')?.remove();
   vi.resetModules();

@@ -61,7 +61,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { tabClass } from '#components/tab-class';
+import { TabRow } from '#components/tab-row';
 import {
   Tooltip,
   TooltipContent,
@@ -192,35 +193,36 @@ export default function DeviceSyncReviewPage(): ReactElement {
           hold sit on a card (2026-10-22), as a record's tabs do. */}
       <Card className='py-0'>
         <CardContent className='flex flex-col gap-4 p-4'>
-          <Tabs
-            value={view}
-            onValueChange={(next) =>
-              setParams({ view: String(next) }, { replace: true })
-            }
+          {/* Each led by its icon, as a record's tabs are (2026-10-22); on a
+              phone no icons, and they scroll sideways on one line rather than
+              cutting the last one off (2026-11-04, TabRow). */}
+          <TabRow
+            label={t('deviceSync.review.title')}
+            selected={view}
+            tabCount={TABS.length}
           >
-            {/* Each led by its icon, as a record's tabs are (2026-10-22). */}
-            {/* Scrolls sideways on a phone rather than cutting the last
-                tab off (2026-10-22). */}
-            <TabsList
-              variant='line'
-              className='max-w-full justify-start overflow-x-auto'
-            >
-              {TABS.map((key) => {
-                const Icon = TAB_ICONS[key];
-                return (
-                  <TabsTrigger key={key} value={key}>
-                    <Icon aria-hidden className='size-4' />
-                    {t(`deviceSync.review.views.${key}`)}
-                    {counts[key] === undefined ? null : (
-                      <span className='text-xs text-muted-foreground tabular-nums'>
-                        {counts[key]}
-                      </span>
-                    )}
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-          </Tabs>
+            {TABS.map((key) => {
+              const Icon = TAB_ICONS[key];
+              return (
+                <button
+                  key={key}
+                  type='button'
+                  role='tab'
+                  aria-selected={key === view}
+                  className={tabClass(key === view)}
+                  onClick={() => setParams({ view: key }, { replace: true })}
+                >
+                  <Icon aria-hidden className='size-4 max-md:hidden' />
+                  {t(`deviceSync.review.views.${key}`)}
+                  {counts[key] === undefined ? null : (
+                    <span className='text-xs text-muted-foreground tabular-nums'>
+                      {counts[key]}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </TabRow>
           {/* Each tab its own follow-ups (2026-10-22): under its hint, the
           reader's devices' and the asset managers', each run again on its
           card; with none, the hint's line starts this tab's. What they

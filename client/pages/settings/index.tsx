@@ -14,9 +14,18 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router';
 
 import { LinkTabs } from '#components/link-tabs';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '#components/ui/select';
+import { useIsMobile } from '#hooks/use-mobile';
 import { Loading } from '#components/loading';
 import { PageFrameContext } from '#components/page-frame';
 import { cn } from '@/lib/utils';
@@ -68,6 +77,7 @@ const TABS: readonly Tab[] = [
 export default function SettingsPage(): ReactElement {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const phone = useIsMobile();
   const demoAccess = useCan(
     demoManagementRoutes.length
       ? { resource: { type: 'settings', id: 'demoMode.data' }, action: 'read' }
@@ -115,6 +125,12 @@ export default function SettingsPage(): ReactElement {
     if (pending) return <Loading />;
     return <Navigate to={`/settings/${tabs[0]?.path ?? 'api-keys'}`} replace />;
   }
+  const pages = tabs.map((tab) => ({
+    to: `/settings/${tab.path}`,
+    label: t(tab.label),
+    icon: tab.icon,
+    selected: tab.path === current,
+  }));
   return (
     <>
       <div className='px-6 pt-6 md:px-8 md:pt-8'>
@@ -134,19 +150,64 @@ export default function SettingsPage(): ReactElement {
           stuck && 'bg-background/85 backdrop-blur-xl',
         )}
       >
-        <LinkTabs
-          label={t('navigation.settingsGroup')}
-          tabs={tabs.map((tab) => ({
-            to: `/settings/${tab.path}`,
-            label: t(tab.label),
-            icon: tab.icon,
-            selected: tab.path === current,
-          }))}
-        />
+        {/* A phone chooses from a menu (2026-11-04, as NocoCRM's): these are
+            separate pages opened now and then, and nine tabs do not fit. */}
+        {phone ? (
+          <SettingsPageMenu
+            label={t('navigation.settingsGroup')}
+            pages={pages}
+          />
+        ) : (
+          <LinkTabs label={t('navigation.settingsGroup')} tabs={pages} />
+        )}
       </div>
       <PageFrameContext.Provider value>
         <Outlet />
       </PageFrameContext.Provider>
     </>
+  );
+}
+
+/** The phone's way between the pages: the open one, and a menu of them all. */
+function SettingsPageMenu({
+  label,
+  pages,
+}: {
+  readonly label: string;
+  readonly pages: readonly {
+    readonly to: string;
+    readonly label: string;
+    readonly icon: LucideIcon;
+    readonly selected: boolean;
+  }[];
+}): ReactElement {
+  const navigate = useNavigate();
+  const items = pages.map((page) => ({ value: page.to, label: page.label }));
+  return (
+    <Select
+      items={items}
+      value={pages.find((page) => page.selected)?.to ?? null}
+      // Replaces the address, as the tabs do.
+      onValueChange={(to) => {
+        if (to) void navigate(String(to), { replace: true });
+      }}
+    >
+      <SelectTrigger aria-label={label} className='w-full'>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {pages.map(({ to, label: name, icon: Icon }) => (
+            <SelectItem key={to} value={to}>
+              {/* Its own line, or the icon sits slightly high. */}
+              <span className='flex items-center gap-2'>
+                <Icon aria-hidden className='size-4' />
+                {name}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
   );
 }

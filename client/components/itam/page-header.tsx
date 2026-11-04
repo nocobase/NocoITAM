@@ -47,7 +47,9 @@ export function PageHeader({
         ) : null}
       </div>
       {actions ? (
-        <div className='flex shrink-0 flex-wrap items-center gap-2'>
+        // At most the page's width (2026-11-03): kept from shrinking, a
+        // phone's list ran 创建 past the screen's edge instead of wrapping.
+        <div className='flex max-w-full flex-wrap items-center gap-2'>
           {actions}
         </div>
       ) : null}
