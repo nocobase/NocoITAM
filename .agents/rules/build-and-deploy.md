@@ -58,6 +58,8 @@ Since `@nocobase/jobs` 1 and `@nocobase/queue` 1 (2026-10-30, with Demo Mode 0.2
 
 That upgrade moved the framework packages ahead of the template: `nocobase.defaultTemplateVersion` stays 1.0.0-beta.84 because only these configuration files, their test and `config.example.yml`'s jobs section were taken from 1.0.0-beta.85, so the next template upgrade finds them already merged and everything else still to do.
 
+Demo Mode 0.2.0-beta.9 (2026-11-06) moved the cohort again, to `@nocobase/app-server` 5 and `@nocobase/caching` 1, without template files: the app never imported the removed `@nocobase/app-server/mailer` entry, its notification configuration already comes from `@nocobase/app-plugin-notification-providers/config`, and the `mailers` section app-server 5 adds is optional, so `server/config/mailers.ts` waits for the next template upgrade and password reset keeps the inline `auth.email` sender.
+
 ## Deploying to Studio
 
 Run release checks under Node 24, matching CI (2026-10-26). Node 26's native `localStorage` conflicts with the jsdom test environment and causes browser-storage tests to fail; on a machine using mise, select the installed Node 24 with `mise exec node@24 -- pnpm test`.
