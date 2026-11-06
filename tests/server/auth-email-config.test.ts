@@ -11,6 +11,13 @@ import {
 } from '@nocobase/app-server/config';
 import auth from '../../server/config/auth.js';
 
+// Authentication 2.0.0-beta.19 warns that sign-up without auto sign-in, email
+// verification or an existing-user notice gives no account-specific guidance.
+// ITAM keeps `autoSignIn: false` on purpose (2026-11-06); these tests check the
+// mail configuration, so that one warning is set aside and nothing else.
+const emailIssues = <T extends { path?: string }>(issues: T[]) =>
+  issues.filter((issue) => issue.path !== 'auth.emailAndPassword.autoSignIn');
+
 it('inherits private authentication sender mappings without changing other mail consumers', async () => {
   const defaults = defaultAppConfigs({ auth });
   const config = new AppConfig();
@@ -27,7 +34,7 @@ it('inherits private authentication sender mappings without changing other mail 
     AUTH_EMAIL_USER: 'synthetic',
     MAIL_HOST: 'unrelated.example.test',
   });
-  expect(await config.validate()).toEqual([]);
+  expect(emailIssues(await config.validate())).toEqual([]);
   expect(config.get('auth.email.host')).toBe('smtp.example.test');
   expect(config.get('auth.email.port')).toBe(587);
   expect(config.get('auth.email.secure')).toBe(false);
@@ -70,7 +77,7 @@ it('ships separate, valid SMTP and Resend authentication examples', async () => 
       const defaults = defaultAppConfigs({ auth });
       config.mergeDefaults(defaults({} as never));
       config.defineSections(defaults.sections!);
-      expect(await config.validate()).toEqual([]);
+      expect(emailIssues(await config.validate())).toEqual([]);
     }
   } finally {
     await rm(directory, { recursive: true, force: true });
