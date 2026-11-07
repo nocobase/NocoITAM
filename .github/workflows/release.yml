@@ -1,0 +1,98 @@
+name: Release
+
+# Releases NocoITAM from the Actions page: run it on main. It sets the next
+# version in package.json (scripts/ci/release-version.mjs: the last number
+# goes up by one unless a version is named), runs the checks a release
+# starts with on that very change, commits "Release <version>", tags it
+# v<version> and pushes both to main together, then deploys the release to
+# the Studios through deploy-studio.yml unless "deploy" is unticked. A check
+# that fails stops it before anything is pushed; a push to main meanwhile
+# makes the push fail rather than release something unchecked. A release not
+# deployed here is deployed later by running deploy-studio.yml on its tag.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release; empty for the current one with its last number increased by one (1.0.0-beta.50 → 1.0.0-beta.51)
+        type: string
+        required: false
+        default: ''
+      deploy:
+        description: Deploy the release to the Studios
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# One release at a time; a second waits rather than racing for the version.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    outputs:
+      tag: v${{ steps.version.outputs.version }}
+    steps:
+      # No credentials are left in the checkout while dependencies install
+      # and the checks run; only the push step is given the token.
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Set the version
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: node scripts/ci/release-version.mjs "$REQUESTED_VERSION"
+      - name: Check the tag is new
+        env:
+          TAG: v${{ steps.version.outputs.version }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "::error::The tag $TAG already exists"
+            exit 1
+          fi
+      - uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
+        with:
+          # package.json names no packageManager; the lockfile is pnpm 10's.
+          version: 10.34.5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The checks a release starts with (.agents/rules/build-and-deploy.md).
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm test --maxWorkers=2 --passWithNoTests=false
+      - name: Commit, tag and push
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898299+github-actions[bot]@users.noreply.github.com'
+          git add package.json
+          git commit -m "Release $VERSION"
+          git tag "v$VERSION"
+          git push --atomic \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            HEAD:refs/heads/main "refs/tags/v$VERSION"
+          echo "Released $VERSION as v$VERSION" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: release
+    if: inputs.deploy
+    uses: ./.github/workflows/deploy-studio.yml
+    with:
+      tag: ${{ needs.release.outputs.tag }}
+      skip-checks: true
+    secrets: inherit

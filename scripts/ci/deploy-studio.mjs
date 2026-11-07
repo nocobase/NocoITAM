@@ -117,14 +117,16 @@ export function validateConfig(env) {
 }
 
 // Only a release is deployed: the run is for the tag v<version> of the
-// version package.json holds at that commit.
+// version package.json holds at that commit. The workflow names the tag in
+// RELEASE_REF, since a run started by release.yml has that workflow's
+// GITHUB_REF (main) rather than the tag's.
 export function validateRelease(env, version) {
   assert(
     typeof version === 'string' && /^\d+\.\d+\.\d+(?:-[\w.]+)?$/u.test(version),
     'package.json has no release version',
   );
   assert.equal(
-    env.GITHUB_REF,
+    env.RELEASE_REF,
     `refs/tags/v${version}`,
     `Deploy only from the release tag v${version}`,
   );
@@ -348,7 +350,7 @@ async function main() {
     }).trim();
     assert.equal(
       sha,
-      process.env.GITHUB_SHA,
+      process.env.RELEASE_SHA,
       'Checkout does not match the tag',
     );
     assert(process.env.GITHUB_REPOSITORY, 'Missing GITHUB_REPOSITORY');
