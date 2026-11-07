@@ -99,21 +99,21 @@ describe('the Studio release deployment', () => {
   it('deploys only the release tag of the version package.json holds', () => {
     expect(() =>
       validateRelease(
-        { GITHUB_REF: 'refs/tags/v1.0.0-beta.40' },
+        { RELEASE_REF: 'refs/tags/v1.0.0-beta.40' },
         '1.0.0-beta.40',
       ),
     ).not.toThrow();
     expect(() =>
-      validateRelease({ GITHUB_REF: 'refs/heads/main' }, '1.0.0-beta.40'),
+      validateRelease({ RELEASE_REF: 'refs/heads/main' }, '1.0.0-beta.40'),
     ).toThrow('Deploy only from the release tag v1.0.0-beta.40');
     expect(() =>
       validateRelease(
-        { GITHUB_REF: 'refs/tags/v1.0.0-beta.39' },
+        { RELEASE_REF: 'refs/tags/v1.0.0-beta.39' },
         '1.0.0-beta.40',
       ),
     ).toThrow('release tag');
     expect(() =>
-      validateRelease({ GITHUB_REF: 'refs/tags/vnext' }, 'next'),
+      validateRelease({ RELEASE_REF: 'refs/tags/vnext' }, 'next'),
     ).toThrow('no release version');
   });
 

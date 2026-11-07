@@ -1,39 +1,56 @@
 name: Deploy to Studio
 
-# A release deploys itself: the "Release <version>" commit is pushed to main
-# with the tag v<version>, and that tag runs this. The release is checked and
-# built once, then deployed to each Studio in parallel, each in its own
-# GitHub environment holding that Studio's settings (scripts/ci/deploy-studio.mjs
-# checks them):
+# A release deploys itself: release.yml, run by hand on main, commits
+# "Release <version>", tags it v<version>, pushes both and calls this with
+# the tag (a tag pushed with the workflow's own token starts no workflow, so
+# it is called rather than started by the tag). A tag pushed by hand still
+# starts this, and running it by hand on a release tag deploys that release
+# again. The release is checked and built once, then deployed to each Studio
+# in parallel, each in its own GitHub environment holding that Studio's
+# settings (scripts/ci/deploy-studio.mjs checks them):
 #   studio-internal  studio.v2.test.nocobase.com
 #   studio-cn        solutions-cn.nocobase.com
 #   studio-global    solutions.nocobase.com
 # with the variables NB_STUDIO_SERVER (the Studio's address, e.g.
 # https://studio.v2.test.nocobase.com/main) and STUDIO_APP_URL (the application's
 # address there, e.g. https://studio.v2.test.nocobase.com/itam/), and the
-# secret NB_STUDIO_API_KEY. A Studio failing does not stop the others. Run it
-# by hand on a release tag to deploy that release again.
+# secret NB_STUDIO_API_KEY. A Studio failing does not stop the others.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      tag:
+        description: The release tag to deploy, v<version>
+        type: string
+        required: true
+      skip-checks:
+        description: The caller has already run the checks on this commit
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   build:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: inputs.tag != '' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - name: Check the release is on main
-        run: git merge-base --is-ancestor HEAD origin/main
+        id: release
+        run: |
+          git merge-base --is-ancestor HEAD origin/main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
         with:
           # package.json names no packageManager; the lockfile is pnpm 10's.
@@ -43,11 +60,16 @@ jobs:
           node-version: '24'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # The checks a release starts with (.agents/rules/build-and-deploy.md).
-      - run: pnpm lint
-      - run: pnpm format:check
-      - run: pnpm typecheck
-      - run: pnpm test --maxWorkers=2 --passWithNoTests=false
+      # The checks a release starts with (.agents/rules/build-and-deploy.md),
+      # unless release.yml has just run them on this very commit.
+      - if: ${{ !inputs.skip-checks }}
+        run: pnpm lint
+      - if: ${{ !inputs.skip-checks }}
+        run: pnpm format:check
+      - if: ${{ !inputs.skip-checks }}
+        run: pnpm typecheck
+      - if: ${{ !inputs.skip-checks }}
+        run: pnpm test --maxWorkers=2 --passWithNoTests=false
       - run: pnpm build --target linux-x64 --node-version 24 --tar
         env:
           # The client build outgrows Node's default heap on the runner
@@ -74,6 +96,10 @@ jobs:
       group: studio-${{ matrix.studio }}-itam
       cancel-in-progress: false
     env:
+      # The release this run deploys; deploy-studio.mjs checks the checkout
+      # and package.json against them.
+      RELEASE_REF: ${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || github.ref }}
+      RELEASE_SHA: ${{ needs.build.outputs.sha }}
       NB_STUDIO_SERVER: ${{ vars.NB_STUDIO_SERVER }}
       STUDIO_APP_URL: ${{ vars.STUDIO_APP_URL }}
       STUDIO_TARGET: linux-x64
@@ -81,7 +107,7 @@ jobs:
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.RELEASE_REF }}
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
