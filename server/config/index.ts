@@ -1,3 +1,4 @@
+import mailers from './mailers.js';
 import {
   defaultAppConfigs,
   type AppConfigFactory,
@@ -17,18 +18,21 @@ import queue from './queue.js';
 import jobs from './jobs.js';
 import scheduler from './scheduler.js';
 import caching from './caching.js';
+import realtime from './realtime.js';
 import i18n from './i18n.js';
 import app from './app.js';
 import api from './api.js';
 import database from './database.js';
 import snowflake from './snowflake.js';
 import users from './users.js';
+import foundation from './foundation.js';
 import ai from './ai.js';
 import agents from './agents.js';
 import deviceSync from './device-sync.js';
 import demoMode from './demo-mode.js';
 
 const defaultConfigs: AppConfigFactory<{
+  mailers: ReturnType<typeof mailers>;
   auth: ReturnType<typeof auth>;
   authorization: ReturnType<typeof authorization>;
   notification: ReturnType<typeof notification>;
@@ -44,12 +48,14 @@ const defaultConfigs: AppConfigFactory<{
   jobs: ReturnType<typeof jobs>;
   scheduler: ReturnType<typeof scheduler>;
   caching: ReturnType<typeof caching>;
+  realtime: ReturnType<typeof realtime>;
   i18n: ReturnType<typeof i18n>;
   app: ReturnType<typeof app>;
   api: ReturnType<typeof api>;
   database: ReturnType<typeof database>;
   snowflake: ReturnType<typeof snowflake>;
   users: ReturnType<typeof users>;
+  foundation: ReturnType<typeof foundation>;
   // Application sections: ITAM's model services, the Agents plugin's and the
   // device management platforms ITAM reads devices from.
   ai: ReturnType<typeof ai>;
@@ -57,6 +63,7 @@ const defaultConfigs: AppConfigFactory<{
   deviceSync: ReturnType<typeof deviceSync>;
   demoMode: ReturnType<typeof demoMode>;
 }> = defaultAppConfigs({
+  mailers,
   auth,
   authorization,
   notification,
@@ -72,12 +79,14 @@ const defaultConfigs: AppConfigFactory<{
   jobs,
   scheduler,
   caching,
+  realtime,
   i18n,
   app,
   api,
   database,
   snowflake,
   users,
+  foundation,
   ai,
   agents,
   deviceSync,

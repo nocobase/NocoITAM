@@ -1,6 +1,7 @@
 import type { AppResource } from './en-US.js';
 import agentChatViVN from '../extensions/nocobase-agent-chat/locales/vi-VN.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/vi-VN.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/vi-VN.js';
 import adminViVN from './admin/vi-VN.js';
 import systemViVN from './system/vi-VN.js';
 
@@ -9,6 +10,9 @@ const viVN: AppResource = {
   ...agentChatViVN,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   admin: adminViVN,
 
   appearance: {
@@ -2632,10 +2636,24 @@ const viVN: AppResource = {
   },
   settings: {
     ...systemViVN.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: 'Nhật ký thông báo',
+    notificationManagementDescription:
+      'Theo dõi việc gửi thông báo, xem các mẫu thông báo đã đăng ký và bản xem trước nội dung tổng hợp.',
+    itamModule: {
+      title: 'Cài đặt quản lý tài sản',
+      description:
+        'Quy tắc đánh số, ngưỡng nhắc nhở, đồng bộ thiết bị, quy trình phê duyệt và nhận hàng từ phiếu giao hàng.',
+    },
+    apiKeysDescription:
+      'Khóa cho phép script và tích hợp gọi API dưới danh nghĩa của bạn.',
+    scheduledTasksDescription:
+      'Các tác vụ chạy theo lịch, những lần chạy gần nhất và công tắc bật/tắt.',
     noRoleAccess:
       'Người dùng này vẫn có thể đăng nhập và sử dụng các chức năng cơ bản của tài khoản. Vai trò không cấp quyền truy cập nghiệp vụ.',
     noAssignedRoles: 'Chưa gán vai trò',
-    title: 'Cài đặt',
     deviceSyncRules: {
       title: 'Quy tắc rà soát',
       description:
@@ -2898,6 +2916,7 @@ const viVN: AppResource = {
     },
     demo: {
       title: 'Dữ liệu demo',
+      cardDescription: 'Nhập hoặc đặt lại dữ liệu demo của công ty hư cấu.',
       description:
         'Một công ty hư cấu, bằng tiếng Trung hoặc tiếng Anh: thiết bị, tồn kho, quyền sử dụng, mua sắm, sửa chữa, kiểm kê và thanh lý, kèm một số vấn đề cố ý (cho mượn quá hạn, quyền sử dụng bị cấp vượt, chênh lệch kiểm kê, người nghỉ việc vẫn giữ laptop), với ngày tháng tính theo ngày nhập. Xóa chỉ gỡ những gì do lần nhập tạo ra.',
       generate: 'Nhập dữ liệu demo',
@@ -3603,8 +3622,6 @@ const viVN: AppResource = {
   shell: {
     ...systemViVN.shell,
     workspace: 'Không gian làm việc ứng dụng AI',
-    buildFreely: 'AI tự do xây dựng.',
-    reliability: '<brand>NocoBase</brand> giữ cho mọi thứ tin cậy.',
   },
   auth: {
     welcome: 'Chào mừng bạn quay lại',
@@ -3654,9 +3671,6 @@ const viVN: AppResource = {
       'Dữ liệu, kiểm soát truy cập, quy trình và quản trị đáng tin cậy.',
     foundation: 'Nền tảng NocoBase',
     marketingFooter: 'Tự do phía trên. Vững chắc phía dưới.',
-    marketingTitleFirst: 'Để AI tự do xây dựng.',
-    marketingTitleSecond: 'NocoBase giữ cho mọi thứ',
-    marketingTitleThird: 'tin cậy.',
     passwordMismatch: 'Mật khẩu không khớp.',
   },
   status: {

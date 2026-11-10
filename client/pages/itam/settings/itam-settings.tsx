@@ -2,8 +2,6 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useState, type ReactElement } from 'react';
 import { Navigate, useSearchParams } from 'react-router';
 
-import { PageContainer } from '#components/page-container';
-import { PageHeader } from '#components/page-header';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -18,6 +16,7 @@ import { useItamSettings, type ItamSettings } from '@/lib/itam/api';
 
 import { NumberField, SettingsCard } from './settings-parts';
 import { useSave } from './use-settings-save';
+import { SettingsModulePage } from '../../settings/settings-module-page.js';
 
 /**
  * Where a link written before the settings became one page (`?tab=`) now
@@ -41,11 +40,7 @@ export default function ItamSettingsPage(): ReactElement {
   const moved = MOVED[params.get('tab') ?? ''];
   if (moved) return <Navigate to={moved} replace />;
   return (
-    <PageContainer>
-      <PageHeader
-        title={t('settings.pageTitle')}
-        description={t('settings.description')}
-      />
+    <SettingsModulePage description={t('settings.description')}>
       {settings.data ? (
         // At a readable width.
         <div className='flex max-w-4xl flex-col gap-6'>
@@ -55,7 +50,7 @@ export default function ItamSettingsPage(): ReactElement {
           <AiCard value={settings.data.ai} />
         </div>
       ) : null}
-    </PageContainer>
+    </SettingsModulePage>
   );
 }
 

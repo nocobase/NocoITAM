@@ -1,15 +1,32 @@
 import { demoModeRoutes } from '@nocobase/app-plugin-demo-mode/client';
+import { Database } from 'lucide-react';
 
-/** The settings tab and its route share the deployment's published flag. */
+/**
+ * 演示数据's card in 业务配置 on the settings home (template 1.0.0-beta.92,
+ * 2026-11-10); the same name, address and grant it had as a settings tab.
+ */
+const card = {
+  parent: 'settingsBusiness',
+  path: '/demo',
+  auth: 'required',
+  navigation: {
+    title: 'settings.demo.title',
+    description: 'settings.demo.cardDescription',
+    icon: Database,
+  },
+  breadcrumb: { title: 'settings.demo.title' },
+  componentLoader: () => import('../../pages/itam/settings/demo.js'),
+} as const;
+
+/** The settings card and its route share the deployment's published flag. */
 export const demoManagementRoutes = demoModeRoutes([
   {
+    ...card,
     name: 'itam-settings-demo',
-    path: 'demo',
     authz: {
       resource: { type: 'settings', id: 'demoMode.data' },
       action: 'read',
     },
-    componentLoader: () => import('../../pages/itam/settings/demo.js'),
   },
 ]);
 
@@ -19,12 +36,11 @@ export const demoSettingsRoutes = demoManagementRoutes.length
   ? demoManagementRoutes
   : [
       {
+        ...card,
         name: 'itam-settings-sample-data',
-        path: 'demo',
         authz: {
           resource: { type: 'page' as const, id: 'itam-settings' },
           action: 'access',
         },
-        componentLoader: () => import('../../pages/itam/settings/demo.js'),
       },
     ];

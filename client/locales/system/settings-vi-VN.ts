@@ -4,6 +4,10 @@ import type settingsEnUS from './settings-en-US.js';
 // The template's Settings copy (client/locales/system/settings-en-US.ts): the
 // prepared Users and Roles pages and the permission editor, in vi-VN.
 const settings: LocaleResource<typeof settingsEnUS> = {
+  notificationManagementDescription:
+    'Xem các mẫu thông báo đã đăng ký và bản xem trước với nội dung mô phỏng.',
+  notificationTemplates: 'Mẫu thông báo',
+  notificationManagement: 'Quản lý thông báo',
   listChanged: 'Danh sách đã thay đổi. Vui lòng thử lại.',
   setup: {
     title: 'Điều kiện tiên quyết của tính năng',
@@ -104,6 +108,19 @@ const settings: LocaleResource<typeof settingsEnUS> = {
 
   reload: 'Tải lại vai trò',
   title: 'Cài đặt hệ thống',
+  home: {
+    description:
+      'Tài khoản, quyền, cấu hình nghiệp vụ và chức năng hệ thống đều ở đây.',
+    empty: 'Hiện chưa có cài đặt nào bạn có thể quản lý.',
+  },
+  categories: {
+    account: 'Tài khoản và quyền',
+    business: 'Cấu hình nghiệp vụ',
+    ai: 'AI',
+    system: 'Hệ thống',
+  },
+  permissionManagementDescription:
+    'Thiết lập những trang mỗi vai trò được mở, thao tác được thực hiện và dữ liệu được xem.',
   users: 'Người dùng',
   roles: 'Vai trò và quyền',
   usersDescription:

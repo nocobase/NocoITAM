@@ -5,6 +5,104 @@ import inboxFrFR from '#extensions/nocobase-inbox/locales/fr-FR';
 
 /** The French copy of what the template ships; see `./en-US.ts`. */
 const systemFrFR: SystemResource = {
+  databaseExplorer: {
+    title: 'Explorateur de base de données',
+    description:
+      'Parcourir les connexions de base de données, les tables et les champs de l’application.',
+    connection: 'Connexion',
+    chooseConnection: 'Choisir une connexion',
+    defaultConnection: 'Par défaut',
+    schemaManagement: {
+      managed: 'Géré par l’application',
+      external: 'Géré en externe',
+    },
+    tables: 'Tables',
+    tablesIn: 'Tables de {{connection}}',
+    searchTables: 'Rechercher par nom ou titre de table',
+    clearSearch: 'Effacer la recherche',
+    tableCount_one: '{{count}} table',
+    tableCount_other: '{{count}} tables',
+    tablesMatched_one: '{{count}} table sur {{total}} correspond',
+    tablesMatched_other: '{{count}} tables sur {{total}} correspondent',
+    loadingTables_one: 'Chargement des tables… {{count}} lue pour l’instant',
+    loadingTables_other: 'Chargement des tables… {{count}} lues pour l’instant',
+    truncated_one:
+      'Seule {{count}} table est listée ; la recherche ne porte que sur elle.',
+    truncated_other:
+      'Seules les {{count}} premières tables sont listées ; la recherche ne porte que sur ces tables.',
+    partial_one:
+      'Chargement interrompu après {{count}} table ; la recherche ne porte que sur celle-ci.',
+    partial_other:
+      'Chargement interrompu après {{count}} tables ; la recherche ne porte que sur ces tables.',
+    selectedHidden:
+      'La table ouverte « {{table}} » ne correspond pas à la recherche.',
+    kind: { table: 'Table', view: 'Vue', materializedView: 'Vue matérialisée' },
+    kindLabel: 'Type',
+    collectionName: 'Nom',
+    tableName: 'Table',
+    schema: 'Schéma',
+    fields: 'Champs',
+    fieldsOf: 'Champs de {{table}}',
+    searchFields: 'Rechercher par nom, titre ou type de champ',
+    fieldCount_one: '{{count}} champ',
+    fieldCount_other: '{{count}} champs',
+    fieldsMatched_one: '{{count}} champ sur {{total}} correspond',
+    fieldsMatched_other: '{{count}} champs sur {{total}} correspondent',
+    column: {
+      field: 'Champ',
+      type: 'Type',
+      nullable: 'Valeur nulle',
+      references: 'Références',
+    },
+    primaryKey: 'Clé primaire',
+    yes: 'Oui',
+    no: 'Non',
+    notReported: 'Non indiqué',
+    notApplicable: 'Sans objet',
+    relationNullable: 'Relation, pas une colonne',
+    nullableTag: {
+      yes: 'Valeur nulle autorisée',
+      no: 'Non nul',
+      unknown: 'Valeur nulle : non indiqué',
+    },
+    none: 'Aucune',
+    warnings_one: '{{count}} remarque d’inspection',
+    warnings_other: '{{count}} remarques d’inspection',
+    warningDescription: 'Certaines informations peuvent être incomplètes.',
+    backToTables: 'Toutes les tables',
+    selectTable: 'Sélectionnez une table pour afficher ses champs.',
+    loading: 'Chargement',
+    signIn: 'Se connecter',
+    retry: 'Réessayer',
+    notice: {
+      unauthenticated: 'Session expirée',
+      forbidden:
+        'Vous n’avez pas l’autorisation de parcourir les bases de données',
+      connectionNotFound: 'Cette connexion n’existe pas',
+      tableNotFound: 'Cette table n’existe pas sur la connexion',
+      unavailable: 'La base de données est indisponible pour le moment',
+      failed: 'Impossible de charger les informations de la base de données',
+      noConnections: 'Aucune connexion de base de données n’est configurée',
+      noTables: 'Cette connexion ne contient aucune table',
+      noFields: 'Cette table ne contient aucun champ',
+      noResults: 'Aucun résultat',
+    },
+  },
+  pendingFeedback: {
+    working: 'Traitement en cours…',
+    longWait:
+      'Cela prend plus de temps que d’habitude. Vous pouvez continuer à patienter.',
+  },
+  taskProgress: {
+    queued: 'En attente de démarrage',
+    running: 'En cours',
+    completed: 'Terminée',
+    failed: 'Échec',
+    canceled: 'Annulée',
+    count: '{{processed}} sur {{total}}',
+    processed: '{{processed}} traités',
+    background: 'La tâche continue si vous quittez cette page.',
+  },
   listFeedback: {
     loading: 'Chargement',
     empty: 'Aucune donnée pour le moment',
@@ -78,6 +176,9 @@ const systemFrFR: SystemResource = {
     'Connectez-vous avec votre identifiant ou votre e-mail et votre mot de passe.',
   'auth.registerTitle': 'Créer un compte',
   'auth.registerDescription': 'Créez un compte pour commencer.',
+  'auth.registrationAccepted': 'Demande d’inscription envoyée',
+  'auth.registrationGuidance':
+    'Essayez de vous connecter avec le nom d’utilisateur et le mot de passe que vous avez saisis. Si cette adresse e-mail possède déjà un compte, les nouvelles informations ne seront pas prises en compte. Connectez-vous avec votre compte d’origine ou récupérez votre mot de passe. Avant de vous connecter, suivez les éventuelles instructions de vérification fournies par l’application.',
   'auth.forgotTitle': 'Mot de passe oublié',
   'auth.forgotDescription':
     'Saisissez votre e-mail ; nous vous enverrons un lien de réinitialisation si le compte existe.',
@@ -123,9 +224,8 @@ const systemFrFR: SystemResource = {
   'auth.continueWith': 'Continuer avec {provider}',
   'auth.about': 'À propos de cette application',
   'auth.platform': 'Plateforme d’applications nativement IA',
-  'auth.marketingTitleFirst': 'Laissez l’IA construire librement.',
-  'auth.marketingTitleSecond': 'NocoBase en garantit',
-  'auth.marketingTitleThird': 'la fiabilité.',
+  'auth.marketingTitleFirst': 'AI + NocoBase',
+  'auth.marketingTitleSecond': 'Build reliable business systems',
   'auth.marketingDescription':
     'Donnez à l’IA un framework frontend flexible pour façonner chaque expérience, pendant que NocoBase sécurise en dessous les données, les permissions et la gouvernance.',
   'auth.frontend': 'Frontend nativement IA',
@@ -136,10 +236,14 @@ const systemFrFR: SystemResource = {
     'Données fiables, contrôle d’accès et gouvernance.',
   'auth.marketingFooter': 'Liberté au-dessus. Confiance en dessous.',
   'status.loading': 'Chargement',
+  'status.refreshing': 'Actualisation',
   'status.loadingPage': 'Chargement de la page',
   'status.denied': 'Accès refusé',
   'status.pageFailed': 'Impossible de charger la page',
   'status.retry': 'Réessayer',
+  'status.reloadPage': 'Recharger la page',
+  'status.retryFailedDescription':
+    'Le chargement échoue toujours. Recharger toute la page peut aider ; les modifications non enregistrées sur cette page risquent d’être perdues.',
   'navigation.brandHome': 'Accueil NocoBase',
   'navigation.brandApps': 'Applications NocoBase',
   'routeOverlay.close': 'Fermer',
@@ -148,8 +252,8 @@ const systemFrFR: SystemResource = {
   'status.routeFailedDescription':
     'La route {{label}} de {{packageName}} n’a pas pu être chargée.',
   shell: {
-    buildFreely: 'L’IA construit librement.',
-    reliability: '<brand>NocoBase</brand> en garantit la fiabilité.',
+    brandPartnership: 'AI + <brand>NocoBase</brand>',
+    buildReliableSystems: 'Build reliable business systems',
   },
   home: {
     platform: 'NocoBase · Plateforme d’applications nativement IA',
@@ -363,7 +467,7 @@ const systemFrFR: SystemResource = {
   },
 
   appearance: {
-    title: 'Apparence',
+    title: 'Thème',
     mode: 'Mode de couleur',
     preset: 'Thème',
     light: 'Clair',
@@ -395,6 +499,7 @@ const systemFrFR: SystemResource = {
     signingOut: 'Déconnexion…',
   },
   navigation: {
+    resources: 'Ressources',
     home: 'Accueil',
     open: 'Ouvrir la navigation',
     close: 'Fermer la navigation',
@@ -406,6 +511,7 @@ const systemFrFR: SystemResource = {
     breadcrumb: 'Fil d’Ariane',
     breadcrumbMore: 'Afficher les niveaux intermédiaires',
     back: 'Retour',
+    backTo: 'Retour à {{label}}',
   },
   dataTable: {
     noResults: 'Aucun résultat',
@@ -425,6 +531,7 @@ const systemFrFR: SystemResource = {
   datePicker: {
     placeholder: 'Choisir une date',
     rangePlaceholder: 'Choisir une période',
+    clear: 'Effacer',
   },
 };
 

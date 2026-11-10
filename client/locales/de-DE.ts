@@ -1,6 +1,7 @@
 import type { AppResource } from './en-US.js';
 import agentChatDeDE from '../extensions/nocobase-agent-chat/locales/de-DE.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/de-DE.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/de-DE.js';
 import adminDeDE from './admin/de-DE.js';
 import systemDeDE from './system/de-DE.js';
 
@@ -9,6 +10,9 @@ const deDE: AppResource = {
   ...agentChatDeDE,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   admin: adminDeDE,
 
   appearance: {
@@ -2685,10 +2689,24 @@ const deDE: AppResource = {
   },
   settings: {
     ...systemDeDE.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: 'Benachrichtigungsprotokolle',
+    notificationManagementDescription:
+      'Zustellungen von Benachrichtigungen nachverfolgen und registrierte Benachrichtigungsvorlagen mit synthetischen Inhaltsvorschauen ansehen.',
+    itamModule: {
+      title: 'Einstellungen des Asset-Managements',
+      description:
+        'Nummernkreise, Erinnerungsschwellen, Gerätesynchronisierung, Freigabeabläufe und Wareneingang per Lieferschein.',
+    },
+    apiKeysDescription:
+      'Schlüssel, mit denen Skripte und Integrationen die API in Ihrem Namen aufrufen.',
+    scheduledTasksDescription:
+      'Die zeitgesteuerten Aufgaben, ihre letzten Ausführungen und Schalter.',
     noRoleAccess:
       'Dieser Benutzer kann sich weiterhin anmelden und grundlegende Kontofunktionen nutzen. Rollen gewähren keinen Zugriff auf Geschäftsfunktionen.',
     noAssignedRoles: 'Keine Rollen zugewiesen',
-    title: 'Einstellungen',
     deviceSyncRules: {
       title: 'Prüfregeln',
       description:
@@ -2956,6 +2974,8 @@ const deDE: AppResource = {
     },
     demo: {
       title: 'Demodaten',
+      cardDescription:
+        'Die Demodaten des fiktiven Unternehmens importieren oder zurücksetzen.',
       description:
         'Ein fiktives Unternehmen, auf Chinesisch oder Englisch: Geräte, Bestand, Nutzungsrechte, Einkauf, Reparaturen, Inventuren und Aussonderungen, mit einigen absichtlichen Problemen (überfällige Leihen, ein überbelegtes Nutzungsrecht, eine Inventurabweichung, ein Ausgeschiedener mit Laptop), datiert relativ zum Importtag. Beim Löschen wird nur entfernt, was der Import angelegt hat.',
       generate: 'Demodaten importieren',
@@ -3672,8 +3692,6 @@ const deDE: AppResource = {
   shell: {
     ...systemDeDE.shell,
     workspace: 'KI-Anwendungsarbeitsbereich',
-    buildFreely: 'KI baut frei.',
-    reliability: '<brand>NocoBase</brand> sorgt für Verlässlichkeit.',
   },
   auth: {
     welcome: 'Willkommen zurück',
@@ -3726,9 +3744,6 @@ const deDE: AppResource = {
       'Verlässliche Daten, Zugriffskontrolle, Workflows und Governance.',
     foundation: 'NocoBase-Fundament',
     marketingFooter: 'Freiheit oben. Sicherheit darunter.',
-    marketingTitleFirst: 'Lassen Sie die KI frei bauen.',
-    marketingTitleSecond: 'NocoBase sorgt für',
-    marketingTitleThird: 'Verlässlichkeit.',
     passwordMismatch: 'Die Passwörter stimmen nicht überein.',
   },
   status: {

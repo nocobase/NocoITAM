@@ -368,7 +368,7 @@ label:has(> .sr-only:focus-visible),
    overlay's footer taller and wider (min-height 10 × spacing, padding 4 ×
    spacing) than the same buttons on a page. ITAM keeps one button size
    everywhere, so the rule is removed; an upgrade that brings it back should
-   leave it out (.agents/rules/components.md). */
+   leave it out (.agents/rules/components.md); beta.92's revision of it, too. */
 /* Route overlays compose the dialog primitives, so their close button sits where a dialog's does. */
 :is([data-slot='dialog-content'], [data-slot='route-overlay-content'])
   > [data-slot='dialog-close'] {

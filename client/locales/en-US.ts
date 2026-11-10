@@ -2,6 +2,7 @@ import type { LocaleResource } from '@nocobase/i18n';
 
 import agentChatEnUS from '../extensions/nocobase-agent-chat/locales/en-US.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/en-US.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/en-US.js';
 import { adminIn, adminWording } from './admin/index.js';
 import systemEnUS from './system/en-US.js';
 
@@ -17,6 +18,9 @@ const messages = {
   ...agentChatEnUS,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   // The settings section's administration pages (client/pages/settings/).
   admin: adminIn(adminWording, 0),
 
@@ -2669,10 +2673,24 @@ const messages = {
   },
   settings: {
     ...systemEnUS.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: 'Notification logs',
+    notificationManagementDescription:
+      'Trace notification deliveries, and view the registered templates with synthetic content previews.',
+    itamModule: {
+      title: 'Asset management settings',
+      description:
+        'Numbering, reminders, device sync, approval flows and receiving by delivery note.',
+    },
+    apiKeysDescription:
+      'Keys that let scripts and integrations call the API as you.',
+    scheduledTasksDescription:
+      'The jobs that run on a schedule, their last runs and switches.',
     noRoleAccess:
       'This user can still sign in and use account basics. Roles grant no business access.',
     noAssignedRoles: 'No assigned roles',
-    title: 'Settings',
     deviceSyncRules: {
       title: 'Review rules',
       description:
@@ -2937,6 +2955,7 @@ const messages = {
     },
     demo: {
       title: 'Demo data',
+      cardDescription: "Load or reset the fictional company's demo data.",
       description:
         'A fictional company, in Chinese or in English: devices, stock, entitlements, purchasing, repairs, stocktakes and disposals, with a few deliberate problems (overdue loans, an over-allocated entitlement, an audit difference, a leaver still holding a laptop), dated relative to the day it is imported. Clearing removes only what the import created.',
       generate: 'Import demo data',
@@ -3650,8 +3669,6 @@ const messages = {
   shell: {
     ...systemEnUS.shell,
     workspace: 'AI application workspace',
-    buildFreely: 'AI builds freely.',
-    reliability: '<brand>NocoBase</brand> keeps it reliable.',
   },
   auth: {
     welcome: 'Welcome back',
@@ -3700,9 +3717,6 @@ const messages = {
       'Reliable data, access control, workflows and governance.',
     foundation: 'NocoBase foundation',
     marketingFooter: 'Freedom above. Confidence below.',
-    marketingTitleFirst: 'Let AI build freely.',
-    marketingTitleSecond: 'NocoBase keeps it',
-    marketingTitleThird: 'reliable.',
     passwordMismatch: "Passwords don't match.",
   },
   status: {

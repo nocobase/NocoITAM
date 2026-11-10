@@ -320,6 +320,126 @@ const adminDeDE: AdminResource = {
       triggered: 'Ausgelöst',
     },
   },
+  notificationTemplates: {
+    intro:
+      'Benachrichtigungen, die das System selbst sendet: wann sie gesendet werden, wer sie erhält und was sie in jeder Sprache sagen. Hier lässt sich nichts ändern.',
+    search: 'Suchen',
+    searchPlaceholder: 'Name oder Beschreibung',
+    category: 'Kategorie',
+    channel: 'Kanal',
+    all: 'Alle',
+    empty: 'Es sind keine Benachrichtigungen registriert.',
+    whatOne: 'diese Benachrichtigungsvorlage',
+    when: 'Wann sie gesendet wird',
+    who: 'Wer sie erhält',
+    conditions: 'Bedingungen',
+    language: 'Sprache',
+    source: 'Bereitgestellt von',
+    channels: 'Kanäle',
+    channelsHint:
+      'Eingerichtet und aktiv heißt nicht, dass die Verbindung funktioniert.',
+    channelState: {
+      configured: 'Eingerichtet',
+      unconfigured: 'Nicht eingerichtet',
+      enabled: 'Aktiv',
+      disabled: 'Inaktiv',
+      unknown: 'Unbekannt',
+    },
+    variables: 'Variablen',
+    preview: 'Vorschau',
+    previewLanguage: 'Vorschausprache',
+    previewAllLanguages:
+      'Diese E-Mail enthält alle Sprachen auf einmal; jeder Empfänger erhält dieselbe Nachricht.',
+    example: 'Beispiel',
+    definition: 'Vorlage',
+    synthetic:
+      'Erfundene Beispieldaten. Die Vorschau sendet nichts und ändert nichts.',
+    html: 'HTML-Version',
+    channelTypes: {
+      'in-app': 'In-App',
+      email: 'E-Mail',
+    },
+    contributors: {
+      itam: 'NocoITAM',
+      users: 'Benutzer',
+    },
+    categories: {
+      accounts: 'Konten',
+      devices: 'Geräte',
+      people: 'Personen',
+      comments: 'Kommentare',
+    },
+    always:
+      'Wird nie an die Person gesendet, deren Aktion sie ausgelöst hat, und jeder Empfänger erhält sie nur einmal.',
+    itamLanguage:
+      'In der Standardsprache der Anwendung, unabhängig von der Oberflächensprache des Empfängers; der Text eines Kommentars erscheint so, wie er geschrieben wurde.',
+    items: {
+      loanOverdue: {
+        name: 'Ausleihe überfällig',
+        trigger:
+          'Die nächtliche Prüfung findet ein ausgeliehenes Gerät, dessen erwartetes Rückgabedatum überschritten ist.',
+        recipients: 'Der Verantwortliche des Geräts.',
+        rule: 'Einmal pro Gerät und erwartetem Rückgabedatum; eine weiterhin überfällige Ausleihe wird nicht erneut gemeldet.',
+        variables: {
+          deviceNo: 'Die Gerätenummer.',
+          date: 'Das erwartete Rückgabedatum.',
+        },
+      },
+      leaverRecovery: {
+        name: 'Rückholung bei Austritt',
+        trigger:
+          'Der nächtliche Auftrag bereitet die Rückholung für eine als ausgetreten markierte Person vor, die noch Geräte, Bestand oder Lizenzplätze hält.',
+        recipients:
+          'Jeder Verantwortliche eines Teils davon, informiert nur über seinen eigenen Anteil.',
+        rule: 'Einmal pro ausgetretener Person und Verantwortlichem.',
+        variables: {
+          name: 'Der Name der ausgetretenen Person.',
+          count: 'Wie viele ihrer Bestände der Empfänger zu erledigen hat.',
+        },
+      },
+      commentMentioned: {
+        name: 'In einem Kommentar erwähnt',
+        trigger:
+          'Ein Kommentar zu einem Datensatz erwähnt einen Kollegen mit @.',
+        recipients: 'Jeder erwähnte Kollege.',
+        rule: 'Einmal pro Kommentar und Person.',
+        variables: {
+          actor: 'Der Verfasser des Kommentars.',
+          title: 'Der kommentierte Datensatz.',
+          text: 'Der Kommentar, gekürzt, in den eigenen Worten des Verfassers.',
+        },
+      },
+      commentReplied: {
+        name: 'Antwort in einem Kommentar-Thread',
+        trigger:
+          'Jemand kommentiert einen Datensatz, den andere bereits kommentiert haben.',
+        recipients:
+          'Alle, die im Thread geschrieben haben; wer in der Antwort per @ erwähnt wird, erhält stattdessen die Erwähnung.',
+        rule: 'Einmal pro Kommentar und Person.',
+        variables: {
+          actor: 'Der Verfasser des Kommentars.',
+          title: 'Der kommentierte Datensatz.',
+          text: 'Der Kommentar, gekürzt, in den eigenen Worten des Verfassers.',
+        },
+      },
+      usersInvitation: {
+        name: 'Benutzereinladung',
+        trigger:
+          'Ein Administrator lädt jemanden ein oder sendet eine Einladung erneut und wählt dabei die Zustellung per E-Mail.',
+        recipients: 'Die E-Mail-Adresse der eingeladenen Person.',
+        rule: 'Wird bei jeder per E-Mail gesendeten Einladung verschickt; es gibt keinen Schalter, um sie abzuschalten.',
+        language:
+          'Eine E-Mail in allen unterstützten Sprachen, der Betreff auf Englisch; die Vorschausprache ändert daran nichts.',
+        variables: {
+          app: 'Der Name der Anwendung.',
+          inviter: 'Wer die Einladung gesendet hat.',
+          items: 'Die gewährten Rollen oder Zugriffe.',
+          date: 'Wann die Einladung abläuft.',
+          url: 'Der einmalige Einladungslink; die Vorschau verwendet einen erfundenen.',
+        },
+      },
+    },
+  },
 };
 
 export default adminDeDE;

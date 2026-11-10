@@ -304,6 +304,118 @@ const adminZhTW: AdminResource = {
       triggered: '已觸發',
     },
   },
+  notificationTemplates: {
+    intro:
+      '系統自動傳送的通知：每類通知什麼時候發、發給誰，以及各語言下的內容。這裡只能查看，不能修改。',
+    search: '搜尋',
+    searchPlaceholder: '名稱或說明',
+    category: '分類',
+    channel: '管道',
+    all: '全部',
+    empty: '尚無已登記的通知。',
+    whatOne: '這個通知範本',
+    when: '什麼時候發',
+    who: '發給誰',
+    conditions: '傳送條件',
+    language: '語言',
+    source: '提供者',
+    channels: '傳送管道',
+    channelsHint: '已設定、已啟用不代表連線一定正常。',
+    channelState: {
+      configured: '已設定',
+      unconfigured: '未設定',
+      enabled: '已啟用',
+      disabled: '已停用',
+      unknown: '狀態不明',
+    },
+    variables: '可用變數',
+    preview: '預覽',
+    previewLanguage: '預覽語言',
+    previewAllLanguages:
+      '這封郵件一次包含所有語言，每位收件人收到的內容都相同。',
+    example: '範例',
+    definition: '範本原文',
+    synthetic: '使用虛構的範例資料，預覽不會傳送通知，也不會變更任何設定。',
+    html: 'HTML 版本',
+    channelTypes: {
+      'in-app': '站內信',
+      email: '電子郵件',
+    },
+    contributors: {
+      itam: 'NocoITAM',
+      users: '使用者',
+    },
+    categories: {
+      accounts: '帳號',
+      devices: '設備',
+      people: '人員',
+      comments: '評論',
+    },
+    always: '不會發給操作者本人，每位收件人只收到一次。',
+    itamLanguage:
+      '使用應用程式的預設語言，不隨收件人的介面語言變化；評論原話照原樣顯示。',
+    items: {
+      loanOverdue: {
+        name: '借出逾期',
+        trigger: '每晚的檢查發現借出的設備已過預計歸還日期。',
+        recipients: '設備負責人。',
+        rule: '同一設備、同一預計歸還日期只通知一次，持續逾期不會重複提醒。',
+        variables: {
+          deviceNo: '設備編號。',
+          date: '預計歸還日期。',
+        },
+      },
+      leaverRecovery: {
+        name: '離職回收',
+        trigger:
+          '每晚的工作為已標記離職、仍持有設備、庫存或授權席位的人員準備回收。',
+        recipients: '這些資產的各位負責人，每人只收到自己負責的部分。',
+        rule: '同一離職人員、同一負責人只通知一次。',
+        variables: {
+          name: '離職人員姓名。',
+          count: '其中由收件人負責處理的數量。',
+        },
+      },
+      commentMentioned: {
+        name: '評論中提到你',
+        trigger: '記錄上的評論 @ 了同事。',
+        recipients: '被 @ 到的同事。',
+        rule: '同一則評論，每人只通知一次。',
+        variables: {
+          actor: '評論人。',
+          title: '被評論的記錄。',
+          text: '評論內容（截短），保留評論人的原話。',
+        },
+      },
+      commentReplied: {
+        name: '評論有新回覆',
+        trigger: '有人在別人評論過的記錄上發表了評論。',
+        recipients:
+          '參與過該討論的人；回覆裡被 @ 到的人改為收到「評論中提到你」。',
+        rule: '同一則評論，每人只通知一次。',
+        variables: {
+          actor: '評論人。',
+          title: '被評論的記錄。',
+          text: '評論內容（截短），保留評論人的原話。',
+        },
+      },
+      usersInvitation: {
+        name: '使用者邀請',
+        trigger: '管理員邀請使用者或重新傳送邀請，並選擇以電子郵件寄送。',
+        recipients: '受邀者的電子郵件地址。',
+        rule: '以電子郵件寄送的邀請都會發出，沒有可關閉的開關。',
+        language:
+          '一封郵件包含所有支援的語言，主旨為英文；切換預覽語言不會改變內容。',
+        variables: {
+          app: '應用程式名稱。',
+          inviter: '邀請人。',
+          items: '授予的角色或權限。',
+          date: '邀請的到期時間。',
+          url: '一次性邀請連結；預覽中使用虛構的連結。',
+        },
+      },
+    },
+  },
 };
 
 export default adminZhTW;

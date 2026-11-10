@@ -1,6 +1,7 @@
 import type { AppResource } from './en-US.js';
 import agentChatKoKR from '../extensions/nocobase-agent-chat/locales/ko-KR.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/ko-KR.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/ko-KR.js';
 import adminKoKR from './admin/ko-KR.js';
 import systemKoKR from './system/ko-KR.js';
 
@@ -9,6 +10,9 @@ const koKR: AppResource = {
   ...agentChatKoKR,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   admin: adminKoKR,
 
   appearance: {
@@ -2616,10 +2620,24 @@ const koKR: AppResource = {
   },
   settings: {
     ...systemKoKR.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: '알림 로그',
+    notificationManagementDescription:
+      '알림 발송 현황을 추적하고, 등록된 알림 템플릿과 합성 콘텐츠 미리보기를 확인합니다.',
+    itamModule: {
+      title: '자산 관리 설정',
+      description:
+        '번호 규칙, 알림 기준값, 기기 동기화, 승인 흐름, 납품서로 입고.',
+    },
+    apiKeysDescription:
+      '스크립트와 통합이 사용자 본인으로 API를 호출할 수 있게 하는 키입니다.',
+    scheduledTasksDescription:
+      '일정에 따라 실행되는 작업, 최근 실행 내역과 켜기/끄기 스위치입니다.',
     noRoleAccess:
       '이 사용자는 계속 로그인하여 계정 기본 기능을 사용할 수 있습니다. 역할에 따른 업무 접근 권한은 없습니다.',
     noAssignedRoles: '할당된 역할 없음',
-    title: '설정',
     deviceSyncRules: {
       title: '검토 규칙',
       description: '플랫폼과 자산 대장의 차이를 언제 표시할지',
@@ -2881,6 +2899,7 @@ const koKR: AppResource = {
     },
     demo: {
       title: '데모 데이터',
+      cardDescription: '가상 회사의 데모 데이터를 가져오거나 초기화합니다.',
       description:
         '중국어 또는 영어로 된 가상 회사의 데이터입니다. 기기, 재고, 라이선스, 구매, 수리, 재고 실사, 폐기를 포함하며 의도적인 문제 몇 가지(반납 기한이 지난 대여, 초과 할당된 라이선스, 실사 차이, 퇴사 후에도 노트북을 보유한 직원)가 들어 있고, 날짜는 가져온 날을 기준으로 합니다. 삭제하면 가져오기로 생성된 데이터만 제거됩니다.',
       generate: '데모 데이터 가져오기',
@@ -3578,8 +3597,6 @@ const koKR: AppResource = {
   shell: {
     ...systemKoKR.shell,
     workspace: 'AI 애플리케이션 워크스페이스',
-    buildFreely: 'AI는 자유롭게 만들고,',
-    reliability: '<brand>NocoBase</brand>가 안정성을 지킵니다.',
   },
   auth: {
     welcome: '다시 오신 것을 환영합니다',
@@ -3629,9 +3646,6 @@ const koKR: AppResource = {
       '신뢰할 수 있는 데이터, 접근 제어, 워크플로, 거버넌스.',
     foundation: 'NocoBase 기반',
     marketingFooter: '위에는 자유를, 아래에는 안심을.',
-    marketingTitleFirst: 'AI는 자유롭게 만들고,',
-    marketingTitleSecond: 'NocoBase는',
-    marketingTitleThird: '안정성을 지킵니다.',
     passwordMismatch: '비밀번호가 일치하지 않습니다.',
   },
   status: {

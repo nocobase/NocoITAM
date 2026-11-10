@@ -1,6 +1,7 @@
 import type { AppResource } from './en-US.js';
 import agentChatPtBR from '../extensions/nocobase-agent-chat/locales/pt-BR.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/pt-BR.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/pt-BR.js';
 import adminPtBR from './admin/pt-BR.js';
 import systemPtBR from './system/pt-BR.js';
 
@@ -9,6 +10,9 @@ const ptBR: AppResource = {
   ...agentChatPtBR,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   admin: adminPtBR,
   appearance: {
     ...systemPtBR.appearance,
@@ -2671,10 +2675,24 @@ const ptBR: AppResource = {
   },
   settings: {
     ...systemPtBR.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: 'Registros de notificação',
+    notificationManagementDescription:
+      'Acompanhe o envio das notificações e veja os modelos registrados com prévias de conteúdo sintético.',
+    itamModule: {
+      title: 'Configurações da gestão de ativos',
+      description:
+        'Numeração, limites de lembrete, sincronização de dispositivos, fluxos de aprovação e recebimento por nota de entrega.',
+    },
+    apiKeysDescription:
+      'Chaves que permitem que scripts e integrações chamem a API em seu nome.',
+    scheduledTasksDescription:
+      'As tarefas executadas por agendamento, suas últimas execuções e seus interruptores.',
     noRoleAccess:
       'Este usuário ainda pode entrar e usar as funções básicas da conta. Nenhum acesso às operações é concedido por funções.',
     noAssignedRoles: 'Nenhuma função atribuída',
-    title: 'Configurações',
     deviceSyncRules: {
       title: 'Regras de revisão',
       description:
@@ -2943,6 +2961,8 @@ const ptBR: AppResource = {
     },
     demo: {
       title: 'Dados de demonstração',
+      cardDescription:
+        'Importe ou redefina os dados de demonstração da empresa fictícia.',
       description:
         'Uma empresa fictícia, em chinês ou em inglês: dispositivos, estoque, direitos de uso, compras, reparos, inventários e baixas, com alguns problemas propositais (empréstimos atrasados, um direito de uso superalocado, uma diferença de inventário, um desligado que ainda está com um notebook), com datas relativas ao dia da importação. Limpar remove apenas o que a importação criou.',
       generate: 'Importar dados de demonstração',
@@ -3658,8 +3678,6 @@ const ptBR: AppResource = {
   shell: {
     ...systemPtBR.shell,
     workspace: 'Espaço de trabalho de aplicativos com IA',
-    buildFreely: 'A IA constrói com liberdade.',
-    reliability: 'O <brand>NocoBase</brand> garante a confiabilidade.',
   },
   auth: {
     welcome: 'Bem-vindo de volta',
@@ -3710,9 +3728,6 @@ const ptBR: AppResource = {
       'Dados, controle de acesso, fluxos de trabalho e governança confiáveis.',
     foundation: 'Base NocoBase',
     marketingFooter: 'Liberdade em cima. Confiança embaixo.',
-    marketingTitleFirst: 'Deixe a IA construir com liberdade.',
-    marketingTitleSecond: 'O NocoBase garante',
-    marketingTitleThird: 'a confiabilidade.',
     passwordMismatch: 'As senhas não coincidem.',
   },
   status: {

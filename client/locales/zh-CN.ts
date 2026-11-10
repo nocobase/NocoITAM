@@ -1,6 +1,7 @@
 import type { AppResource } from './en-US.js';
 import agentChatZhCN from '../extensions/nocobase-agent-chat/locales/zh-CN.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/zh-CN.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/zh-CN.js';
 import { adminIn, adminWording } from './admin/index.js';
 import systemZhCN from './system/zh-CN.js';
 
@@ -10,6 +11,9 @@ const zhCN: AppResource = {
   ...agentChatZhCN,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   admin: adminIn(adminWording, 1),
 
   appearance: {
@@ -2511,9 +2515,20 @@ const zhCN: AppResource = {
   },
   settings: {
     ...systemZhCN.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: '通知日志',
+    notificationManagementDescription:
+      '追踪通知的发送情况，查看已登记的通知模板和合成内容预览。',
+    itamModule: {
+      title: '资产管理设置',
+      description: '编号规则、提醒阈值、设备同步、审批流程和按送货单入库。',
+    },
+    apiKeysDescription: '让脚本和集成以你的身份调用 API 的密钥。',
+    scheduledTasksDescription: '按计划运行的任务、最近的运行情况和开关。',
     noRoleAccess: '此用户仍可登录并使用账号基础功能，角色未授予业务访问。',
     noAssignedRoles: '未分配角色',
-    title: '设置',
     deviceSyncRules: {
       title: '核对规则',
       description: 'MDM 与台账不一致时，什么情况下提示',
@@ -2760,6 +2775,7 @@ const zhCN: AppResource = {
     },
     demo: {
       title: '演示数据',
+      cardDescription: '导入或重置虚构公司的演示数据。',
       description:
         '一家虚构的公司，有中文和英文两版：设备、库存、授权、采购、维修、盘点和报废，并刻意带着几个问题（逾期借用、超配授权、盘点差异、已离职仍持有电脑），日期以导入当天为基准。清除只删除导入的数据。',
       generate: '导入演示数据',
@@ -3483,9 +3499,6 @@ const zhCN: AppResource = {
     foundationDescription: '可靠的数据、访问控制、工作流与治理。',
     foundation: 'NocoBase 基础能力',
     marketingFooter: '自由构建，可靠支撑。',
-    marketingTitleFirst: '让 AI 自由构建。',
-    marketingTitleSecond: 'NocoBase 保障',
-    marketingTitleThird: '可靠运行。',
     passwordMismatch: '两次输入的密码不一致。',
   },
   status: {

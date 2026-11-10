@@ -5,6 +5,106 @@ import inboxJaJP from '#extensions/nocobase-inbox/locales/ja-JP';
 
 /** The Japanese copy of what the template ships; see `./en-US.ts`. */
 const systemJaJP: SystemResource = {
+  databaseExplorer: {
+    title: 'データベースエクスプローラー',
+    description:
+      'アプリケーションのデータベース接続、テーブル、フィールドを閲覧します。',
+    connection: '接続',
+    chooseConnection: '接続を選択',
+    defaultConnection: 'デフォルト',
+    schemaManagement: {
+      managed: 'アプリケーションが管理',
+      external: '外部で管理',
+    },
+    tables: 'テーブル',
+    tablesIn: '{{connection}} のテーブル',
+    searchTables: 'テーブル名またはタイトルで検索',
+    clearSearch: '検索をクリア',
+    tableCount_one: 'テーブル {{count}} 件',
+    tableCount_other: 'テーブル {{count}} 件',
+    tablesMatched_one: '{{total}} 件中 {{count}} 件のテーブルが一致',
+    tablesMatched_other: '{{total}} 件中 {{count}} 件のテーブルが一致',
+    loadingTables_one: 'テーブルを読み込み中…これまでに {{count}} 件',
+    loadingTables_other: 'テーブルを読み込み中…これまでに {{count}} 件',
+    truncated_one:
+      '最初の {{count}} 件のテーブルのみ表示しています。検索の対象はこれらのテーブルだけです。',
+    truncated_other:
+      '最初の {{count}} 件のテーブルのみ表示しています。検索の対象はこれらのテーブルだけです。',
+    partial_one:
+      '{{count}} 件目で読み込みが中断されました。検索の対象は読み込み済みのテーブルだけです。',
+    partial_other:
+      '{{count}} 件目で読み込みが中断されました。検索の対象は読み込み済みのテーブルだけです。',
+    selectedHidden:
+      '開いているテーブル「{{table}}」は検索結果に含まれていません。',
+    kind: {
+      table: 'テーブル',
+      view: 'ビュー',
+      materializedView: 'マテリアライズドビュー',
+    },
+    kindLabel: '種類',
+    collectionName: '名前',
+    tableName: 'テーブル名',
+    schema: 'スキーマ',
+    fields: 'フィールド',
+    fieldsOf: '{{table}} のフィールド',
+    searchFields: 'フィールド名、タイトル、型で検索',
+    fieldCount_one: 'フィールド {{count}} 件',
+    fieldCount_other: 'フィールド {{count}} 件',
+    fieldsMatched_one: '{{total}} 件中 {{count}} 件のフィールドが一致',
+    fieldsMatched_other: '{{total}} 件中 {{count}} 件のフィールドが一致',
+    column: {
+      field: 'フィールド',
+      type: '型',
+      nullable: 'NULL 許可',
+      references: '参照先',
+    },
+    primaryKey: '主キー',
+    yes: 'はい',
+    no: 'いいえ',
+    notReported: '情報なし',
+    notApplicable: '該当なし',
+    relationNullable: 'リレーション（列ではありません）',
+    nullableTag: {
+      yes: 'NULL 許可',
+      no: 'NULL 不可',
+      unknown: 'NULL 許可の情報なし',
+    },
+    none: 'なし',
+    warnings_one: '確認事項 {{count}} 件',
+    warnings_other: '確認事項 {{count}} 件',
+    warningDescription: '一部の情報が不完全な可能性があります。',
+    backToTables: 'すべてのテーブル',
+    selectTable: 'テーブルを選択するとフィールドが表示されます。',
+    loading: '読み込み中',
+    signIn: 'サインイン',
+    retry: '再試行',
+    notice: {
+      unauthenticated: 'セッションの有効期限が切れました',
+      forbidden: 'データベースを閲覧する権限がありません',
+      connectionNotFound: 'この接続は存在しません',
+      tableNotFound: 'この接続にこのテーブルは存在しません',
+      unavailable: '現在データベースを利用できません',
+      failed: 'データベース情報を読み込めません',
+      noConnections: 'データベース接続が設定されていません',
+      noTables: 'この接続にはテーブルがありません',
+      noFields: 'このテーブルにはフィールドがありません',
+      noResults: '結果がありません',
+    },
+  },
+  pendingFeedback: {
+    working: '処理中…',
+    longWait: '通常より時間がかかっています。このままお待ちいただけます。',
+  },
+  taskProgress: {
+    queued: '開始待ち',
+    running: '進行中',
+    completed: '完了',
+    failed: '失敗',
+    canceled: 'キャンセル済み',
+    count: '{{processed}} / {{total}}',
+    processed: '{{processed}} 件処理済み',
+    background: 'このページを離れても処理は続行されます。',
+  },
   listFeedback: {
     loading: '読み込み中',
     empty: 'データはまだありません',
@@ -76,6 +176,9 @@ const systemJaJP: SystemResource = {
     'ユーザー名またはメールアドレスとパスワードでサインインしてください。',
   'auth.registerTitle': 'アカウントを作成',
   'auth.registerDescription': 'アカウントを作成して始めましょう。',
+  'auth.registrationAccepted': '登録リクエストを送信しました',
+  'auth.registrationGuidance':
+    '入力したユーザー名とパスワードでサインインしてみてください。このメールアドレスにすでにアカウントがある場合、新しい情報は反映されません。元のアカウントでサインインするか、パスワードを再設定してください。アプリケーションから確認の案内がある場合は、サインインする前にその手順に従ってください。',
   'auth.forgotTitle': 'パスワードをお忘れの場合',
   'auth.forgotDescription':
     'メールアドレスを入力してください。アカウントが存在する場合は、リセット用のリンクを送信します。',
@@ -120,9 +223,8 @@ const systemJaJP: SystemResource = {
   'auth.continueWith': '{provider} で続行',
   'auth.about': 'このアプリケーションについて',
   'auth.platform': 'AI ネイティブなアプリケーションプラットフォーム',
-  'auth.marketingTitleFirst': 'AI は自由に構築し、',
-  'auth.marketingTitleSecond': 'NocoBase が',
-  'auth.marketingTitleThird': '信頼性を守る。',
+  'auth.marketingTitleFirst': 'AI + NocoBase',
+  'auth.marketingTitleSecond': 'Build reliable business systems',
   'auth.marketingDescription':
     'AI には柔軟なフロントエンドフレームワークで体験を形づくらせ、その土台となるデータ、権限、ガバナンスは NocoBase が守ります。',
   'auth.frontend': 'AI ネイティブなフロントエンド',
@@ -132,10 +234,14 @@ const systemJaJP: SystemResource = {
   'auth.foundationDescription': '信頼できるデータ、アクセス制御、ガバナンス。',
   'auth.marketingFooter': '上には自由を。下には安心を。',
   'status.loading': '読み込み中',
+  'status.refreshing': '更新中',
   'status.loadingPage': 'ページを読み込み中',
   'status.denied': 'アクセスが拒否されました',
   'status.pageFailed': 'ページを読み込めませんでした',
   'status.retry': '再試行',
+  'status.reloadPage': 'ページを再読み込み',
+  'status.retryFailedDescription':
+    'まだ読み込めません。ページ全体を再読み込みすると解決する場合がありますが、このページの未保存の変更は失われる可能性があります。',
   'navigation.brandHome': 'NocoBase ホーム',
   'navigation.brandApps': 'NocoBase アプリケーション',
   'routeOverlay.close': '閉じる',
@@ -143,8 +249,8 @@ const systemJaJP: SystemResource = {
   'status.routeFailedDescription':
     '{{packageName}} のルート {{label}} を読み込めませんでした。',
   shell: {
-    buildFreely: 'AI が自由に構築。',
-    reliability: '<brand>NocoBase</brand> が信頼性を支えます。',
+    brandPartnership: 'AI + <brand>NocoBase</brand>',
+    buildReliableSystems: 'Build reliable business systems',
   },
   home: {
     platform: 'NocoBase · AI ネイティブなアプリケーションプラットフォーム',
@@ -357,7 +463,7 @@ const systemJaJP: SystemResource = {
   },
 
   appearance: {
-    title: '外観',
+    title: 'テーマ',
     mode: 'カラーモード',
     preset: 'テーマ',
     light: 'ライト',
@@ -389,6 +495,7 @@ const systemJaJP: SystemResource = {
     signingOut: 'サインアウトしています…',
   },
   navigation: {
+    resources: 'リソース',
     home: 'ホーム',
     open: 'ナビゲーションを開く',
     close: 'ナビゲーションを閉じる',
@@ -400,6 +507,7 @@ const systemJaJP: SystemResource = {
     breadcrumb: 'パンくずリスト',
     breadcrumbMore: '中間の階層を表示',
     back: '戻る',
+    backTo: '{{label}} に戻る',
   },
   dataTable: {
     noResults: '結果がありません',
@@ -419,6 +527,7 @@ const systemJaJP: SystemResource = {
   datePicker: {
     placeholder: '日付を選択',
     rangePlaceholder: '期間を選択',
+    clear: 'クリア',
   },
 };
 

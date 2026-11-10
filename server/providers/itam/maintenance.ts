@@ -14,6 +14,7 @@ import type { EntitlementService } from './entitlements.js';
 import type { MasterDataService } from './master-data.js';
 import type { HistoryService } from './history.js';
 import { isPrepared, type OnboardingService } from './onboarding.js';
+import { itamMessages } from './notification-messages.js';
 import type { ItamNotifier } from './notifier.js';
 import { sweepSearchAnswers } from '../itam-agents/search-answers.js';
 
@@ -176,11 +177,10 @@ export function createMaintenanceService(dependencies: {
       await notifier.notify({
         key: `loanOverdue:${String(device.id)}:${date}`,
         to: [asText(device.ownerId)],
-        title: {
-          key: 'notifications.loanOverdue',
-          params: { deviceNo: String(device.deviceNo) },
-        },
-        body: { key: 'notifications.loanOverdueBody', params: { date } },
+        ...itamMessages.loanOverdue({
+          deviceNo: String(device.deviceNo),
+          date,
+        }),
         url: `/devices/${String(device.id)}`,
         source: { type: 'device', referenceId: String(device.id) },
       });
@@ -256,14 +256,10 @@ export function createMaintenanceService(dependencies: {
         await notifier.notify({
           key: `leaverRecovery:${id}:${owner}`,
           to: [owner],
-          title: {
-            key: 'notifications.leaverRecovery',
-            params: { name: asText(person.name) ?? '' },
-          },
-          body: {
-            key: 'notifications.leaverRecoveryBody',
-            params: { count: theirs.length },
-          },
+          ...itamMessages.leaverRecovery({
+            name: asText(person.name) ?? '',
+            count: theirs.length,
+          }),
           url: `/people/${id}`,
           source: { type: 'person', referenceId: id },
         });

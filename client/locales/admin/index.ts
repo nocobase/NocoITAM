@@ -417,6 +417,181 @@ export const adminWording = {
       triggered: ['Triggered', '已触发'],
     },
   },
+  // 系统设置 → 通知管理 → 通知模板 (2026-11-10, as NocoCRM has it): the
+  // registered templates worded again by id (notification-template-text.ts),
+  // since the Notification plugin carries each in English only.
+  notificationTemplates: {
+    intro: [
+      'Notifications the system sends on its own: when each is sent, who receives it, and what it says in each language. Nothing here can be changed.',
+      '系统自动发送的通知：每类通知什么时候发、发给谁，以及各语言下的内容。这里只能查看，不能修改。',
+    ],
+    search: ['Search', '搜索'],
+    searchPlaceholder: ['Name or description', '名称或说明'],
+    category: ['Category', '分类'],
+    channel: ['Channel', '渠道'],
+    all: ['All', '全部'],
+    empty: ['No notifications are registered.', '还没有登记的通知。'],
+    whatOne: ['this notification template', '这个通知模板'],
+    when: ['When it is sent', '什么时候发'],
+    who: ['Who receives it', '发给谁'],
+    conditions: ['Conditions', '发送条件'],
+    language: ['Language', '语言'],
+    source: ['Provided by', '提供方'],
+    channels: ['Channels', '发送渠道'],
+    channelsHint: [
+      'Set up and on does not prove the connection works.',
+      '已配置、已启用不代表连接一定正常。',
+    ],
+    channelState: {
+      configured: ['Set up', '已配置'],
+      unconfigured: ['Not set up', '未配置'],
+      enabled: ['On', '已启用'],
+      disabled: ['Off', '已停用'],
+      unknown: ['Unknown', '状态未知'],
+    },
+    variables: ['Variables', '可用变量'],
+    preview: ['Preview', '预览'],
+    previewLanguage: ['Preview language', '预览语言'],
+    previewAllLanguages: [
+      'This email carries every language at once; every recipient gets the same message.',
+      '这封邮件一次包含所有语言，每位收件人收到的内容都相同。',
+    ],
+    example: ['Example', '示例'],
+    definition: ['Template', '模板原文'],
+    synthetic: [
+      'Made-up example data. Previewing sends nothing and changes nothing.',
+      '使用虚构的示例数据，预览不会发送通知，也不会改动任何设置。',
+    ],
+    html: ['HTML version', 'HTML 版本'],
+    channelTypes: {
+      'in-app': ['In-app', '站内信'],
+      email: ['Email', '邮件'],
+    },
+    contributors: {
+      itam: ['NocoITAM', 'NocoITAM'],
+      users: ['Users', '用户'],
+    },
+    categories: {
+      accounts: ['Accounts', '账号'],
+      devices: ['Devices', '设备'],
+      people: ['People', '人员'],
+      comments: ['Comments', '评论'],
+    },
+    // What every one of ITAM's notifications keeps to (notifier.ts).
+    always: [
+      'Never sent to the person whose action caused it, and each recipient gets it once.',
+      '不会发给操作者本人，每位收件人只收到一次。',
+    ],
+    itamLanguage: [
+      "In the application's default language, whatever the recipient's interface language; a comment's own words appear as written.",
+      '使用应用的默认语言，不随收件人的界面语言变化；评论原话按原样显示。',
+    ],
+    items: {
+      loanOverdue: {
+        name: ['Loan overdue', '借出逾期'],
+        trigger: [
+          'The nightly check finds a device on loan past its expected return date.',
+          '每晚的检查发现借出的设备已过预计归还日期。',
+        ],
+        recipients: ["The device's owner.", '设备负责人。'],
+        rule: [
+          'Once per device and expected return date; a loan that stays overdue is not announced again.',
+          '同一设备、同一预计归还日期只通知一次，持续逾期不会重复提醒。',
+        ],
+        variables: {
+          deviceNo: ["The device's number.", '设备编号。'],
+          date: ['The expected return date.', '预计归还日期。'],
+        },
+      },
+      leaverRecovery: {
+        name: ['Leaver recovery', '离职回收'],
+        trigger: [
+          'The nightly job prepares the recovery for a person marked as left who still holds devices, stock or seats.',
+          '每晚的任务为已标记离职、仍持有设备、库存或授权席位的人员准备回收。',
+        ],
+        recipients: [
+          'Each owner of some of those holdings, told only their own share.',
+          '这些资产的各位负责人，每人只收到自己负责的部分。',
+        ],
+        rule: [
+          'Once per leaver and owner.',
+          '同一离职人员、同一负责人只通知一次。',
+        ],
+        variables: {
+          name: ["The leaver's name.", '离职人员姓名。'],
+          count: [
+            "How many of their holdings are the recipient's to settle.",
+            '其中由收件人负责处理的数量。',
+          ],
+        },
+      },
+      commentMentioned: {
+        name: ['Mentioned in a comment', '评论中提到你'],
+        trigger: [
+          'A comment on a record @-mentions a colleague.',
+          '记录上的评论 @ 了同事。',
+        ],
+        recipients: ['Each colleague mentioned.', '被 @ 到的同事。'],
+        rule: ['Once per comment and person.', '同一条评论，每人只通知一次。'],
+        variables: {
+          actor: ["The comment's author.", '评论人。'],
+          title: ['The record commented on.', '被评论的记录。'],
+          text: [
+            "The comment, shortened, in its author's own words.",
+            '评论内容（截短），保留评论人的原话。',
+          ],
+        },
+      },
+      commentReplied: {
+        name: ['Reply in a comment thread', '评论有新回复'],
+        trigger: [
+          'Someone comments on a record others have commented on.',
+          '有人在别人评论过的记录上发表了评论。',
+        ],
+        recipients: [
+          'Everyone who has written in the thread; those the comment @-mentions are told of the mention instead.',
+          '参与过该讨论的人；评论里被 @ 到的人改为收到“评论中提到你”。',
+        ],
+        rule: ['Once per comment and person.', '同一条评论，每人只通知一次。'],
+        variables: {
+          actor: ["The comment's author.", '评论人。'],
+          title: ['The record commented on.', '被评论的记录。'],
+          text: [
+            "The comment, shortened, in its author's own words.",
+            '评论内容（截短），保留评论人的原话。',
+          ],
+        },
+      },
+      // The Users plugin's invitation mail (`users.invitation`), listed once
+      // an invitation mailer is configured.
+      usersInvitation: {
+        name: ['User invitation', '用户邀请'],
+        trigger: [
+          'An administrator invites someone, or resends an invitation, with email delivery chosen.',
+          '管理员邀请用户或重新发送邀请，并选择了通过邮件发送。',
+        ],
+        recipients: ["The invited person's email address.", '被邀请人的邮箱。'],
+        rule: [
+          'Sent with every invitation sent by email; there is no switch to turn it off.',
+          '通过邮件发送的邀请都会发出，没有关闭的开关。',
+        ],
+        language: [
+          'One email in every supported language, its subject in English; the preview language does not change it.',
+          '一封邮件包含所有支持的语言，标题用英文；切换预览语言不会改变内容。',
+        ],
+        variables: {
+          app: ["The application's name.", '应用名称。'],
+          inviter: ['Who sent the invitation.', '邀请人。'],
+          items: ['The roles or access granted.', '授予的角色或权限。'],
+          date: ['When the invitation expires.', '邀请的过期时间。'],
+          url: [
+            'The one-time invitation link; the preview uses a made-up one.',
+            '一次性邀请链接；预览中使用虚构的链接。',
+          ],
+        },
+      },
+    },
+  },
 } as const;
 
 type Wording = { readonly [key: string]: Wording | readonly [string, string] };

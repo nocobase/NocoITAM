@@ -1,4 +1,7 @@
-import { renderSettingsClient as renderWithApp } from '../helpers/settings-client.js';
+import type { ReactElement } from 'react';
+import type { AppClientRegisteredRoute } from '@nocobase/app-client/plugins';
+import { RouteTreeProvider } from '../../client/routing/route-context.js';
+import { renderSettingsClient } from '../helpers/settings-client.js';
 import { answerApi } from '@nocobase/app-testing/client';
 import { apiClientToken, type ClientApplication } from '@nocobase/app-client';
 import {
@@ -32,6 +35,28 @@ vi.mock('../../client/pages/settings/accounts/user-row-extras.js', () => ({
   useUserExtras: () => ({ items: null, dialogs: null, offered: false }),
 }));
 const namespace = '@nocobase/continuity-test';
+const routes: AppClientRegisteredRoute[] = [
+  '/settings/roles',
+  '/settings/processes/loan',
+].map((path) => ({
+  id: path,
+  name: path,
+  path,
+  packageName: namespace,
+  source: 'application',
+  auth: 'required',
+  authz: 'skip',
+  componentLoader: async () => ({ default: () => null }),
+}));
+// Return targets are registered fixture pages, as they are in the running shell.
+const renderWithApp = (
+  ui: ReactElement,
+  options: Parameters<typeof renderSettingsClient>[1] = {},
+) =>
+  renderSettingsClient(
+    <RouteTreeProvider routes={routes}>{ui}</RouteTreeProvider>,
+    options,
+  );
 const namespaces = {
   [namespace]: {
     'en-US': async () => ({ default: enUS }),
@@ -56,6 +81,7 @@ const options = {
     ],
   },
 };
+const refreshing = enUS['status.refreshing'];
 const row = {
   id: 'alice',
   name: 'Alice',
@@ -86,9 +112,8 @@ it.each(['fast', 'slow'] as const)(
     await renderWithApp(
       <Routes>
         <Route path='/settings/users' element={<UsersPage />}>
-          <Route path=':userId' element={<UserDetail />}>
-            <Route path='edit' element={<UserForm />} />
-          </Route>
+          <Route path=':userId' element={<UserDetail />} />
+          <Route path=':userId/edit' element={<UserForm />} />
         </Route>
       </Routes>,
       {
@@ -119,17 +144,17 @@ it.each(['fast', 'slow'] as const)(
     vi.useFakeTimers();
     try {
       await act(() => vi.advanceTimersByTimeAsync(1000));
-      expect(screen.queryByText(enUS.settings.loading)).not.toBeInTheDocument();
+      expect(screen.queryByRole('status', { name: refreshing })).toBeNull();
       await act(async () => {
         fireEvent.click(
           screen.getByRole('button', { name: 'Cancel', exact: true }),
         );
       });
       expect(screen.getByRole('link', { name: 'Alice' })).toBeVisible();
-      expect(screen.queryByText(enUS.settings.loading)).not.toBeInTheDocument();
+      expect(screen.queryByRole('status', { name: refreshing })).toBeNull();
       if (speed === 'slow') {
         await act(() => vi.advanceTimersByTimeAsync(1000));
-        expect(screen.getByText(enUS.settings.loading)).toBeVisible();
+        expect(screen.getByRole('status', { name: refreshing })).toBeVisible();
         expect(screen.getByRole('link', { name: 'Alice' })).toBeVisible();
       }
       await act(async () => {
@@ -140,7 +165,7 @@ it.each(['fast', 'slow'] as const)(
       expect(
         screen.getByRole('link', { name: 'Alice refreshed' }),
       ).toBeVisible();
-      expect(screen.queryByText(enUS.settings.loading)).not.toBeInTheDocument();
+      expect(screen.queryByRole('status', { name: refreshing })).toBeNull();
     } finally {
       vi.useRealTimers();
     }
@@ -329,9 +354,8 @@ it.each(['/settings/users', '/users'])(
       <>
         <Routes>
           <Route path={base} element={<UsersPage />}>
-            <Route path=':userId' element={<UserDetail />}>
-              <Route path='edit' element={<UserForm />} />
-            </Route>
+            <Route path=':userId' element={<UserDetail />} />
+            <Route path=':userId/edit' element={<UserForm />} />
           </Route>
         </Routes>
         <Location />

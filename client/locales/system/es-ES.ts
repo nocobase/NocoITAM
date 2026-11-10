@@ -5,6 +5,105 @@ import inboxEsES from '#extensions/nocobase-inbox/locales/es-ES';
 
 /** The Spanish (Spain) copy of what the template ships; see `./en-US.ts`. */
 const systemEsES: SystemResource = {
+  databaseExplorer: {
+    title: 'Explorador de bases de datos',
+    description:
+      'Consulte las conexiones de base de datos, las tablas y los campos de la aplicación.',
+    connection: 'Conexión',
+    chooseConnection: 'Elija una conexión',
+    defaultConnection: 'Predeterminada',
+    schemaManagement: {
+      managed: 'Gestionado por la aplicación',
+      external: 'Gestionado externamente',
+    },
+    tables: 'Tablas',
+    tablesIn: 'Tablas de {{connection}}',
+    searchTables: 'Buscar por nombre o título de la tabla',
+    clearSearch: 'Borrar búsqueda',
+    tableCount_one: '{{count}} tabla',
+    tableCount_other: '{{count}} tablas',
+    tablesMatched_one: '{{count}} de {{total}} tablas coincide',
+    tablesMatched_other: '{{count}} de {{total}} tablas coinciden',
+    loadingTables_one: 'Cargando tablas… {{count}} leída hasta ahora',
+    loadingTables_other: 'Cargando tablas… {{count}} leídas hasta ahora',
+    truncated_one:
+      'Solo se muestra {{count}} tabla; la búsqueda solo abarca esa tabla.',
+    truncated_other:
+      'Solo se muestran las primeras {{count}} tablas; la búsqueda solo abarca estas tablas.',
+    partial_one:
+      'La carga se detuvo tras {{count}} tabla; la búsqueda solo abarca esa tabla.',
+    partial_other:
+      'La carga se detuvo tras {{count}} tablas; la búsqueda solo abarca estas tablas.',
+    selectedHidden: 'La tabla abierta «{{table}}» no coincide con la búsqueda.',
+    kind: {
+      table: 'Tabla',
+      view: 'Vista',
+      materializedView: 'Vista materializada',
+    },
+    kindLabel: 'Tipo',
+    collectionName: 'Nombre',
+    tableName: 'Tabla',
+    schema: 'Esquema',
+    fields: 'Campos',
+    fieldsOf: 'Campos de {{table}}',
+    searchFields: 'Buscar por nombre, título o tipo del campo',
+    fieldCount_one: '{{count}} campo',
+    fieldCount_other: '{{count}} campos',
+    fieldsMatched_one: '{{count}} de {{total}} campos coincide',
+    fieldsMatched_other: '{{count}} de {{total}} campos coinciden',
+    column: {
+      field: 'Campo',
+      type: 'Tipo',
+      nullable: 'Admite nulos',
+      references: 'Referencias',
+    },
+    primaryKey: 'Clave primaria',
+    yes: 'Sí',
+    no: 'No',
+    notReported: 'No indicado',
+    notApplicable: 'No aplicable',
+    relationNullable: 'Relación, no una columna',
+    nullableTag: {
+      yes: 'Admite nulos',
+      no: 'No nulo',
+      unknown: 'No se indica si admite nulos',
+    },
+    none: 'Ninguna',
+    warnings_one: '{{count}} nota de inspección',
+    warnings_other: '{{count}} notas de inspección',
+    warningDescription: 'Algunos datos pueden estar incompletos.',
+    backToTables: 'Todas las tablas',
+    selectTable: 'Seleccione una tabla para ver sus campos.',
+    loading: 'Cargando',
+    signIn: 'Iniciar sesión',
+    retry: 'Reintentar',
+    notice: {
+      unauthenticated: 'La sesión ha caducado',
+      forbidden: 'No tiene permiso para consultar las bases de datos',
+      connectionNotFound: 'Esta conexión no existe',
+      tableNotFound: 'Esta tabla no existe en la conexión',
+      unavailable: 'La base de datos no está disponible en este momento',
+      failed: 'No se pudo cargar la información de la base de datos',
+      noConnections: 'No hay conexiones de base de datos configuradas',
+      noTables: 'Esta conexión no tiene tablas',
+      noFields: 'Esta tabla no tiene campos',
+      noResults: 'Sin resultados',
+    },
+  },
+  pendingFeedback: {
+    working: 'Procesando…',
+    longWait: 'Está tardando más de lo habitual. Puede seguir esperando.',
+  },
+  taskProgress: {
+    queued: 'Pendiente de inicio',
+    running: 'En curso',
+    completed: 'Completada',
+    failed: 'Fallida',
+    canceled: 'Cancelada',
+    count: '{{processed}} de {{total}}',
+    processed: '{{processed}} procesados',
+    background: 'Sigue ejecutándose aunque salga de esta página.',
+  },
   listFeedback: {
     loading: 'Cargando',
     empty: 'Aún no hay datos',
@@ -78,6 +177,9 @@ const systemEsES: SystemResource = {
     'Inicie sesión con su nombre de usuario o correo electrónico y su contraseña.',
   'auth.registerTitle': 'Crear una cuenta',
   'auth.registerDescription': 'Cree una cuenta para empezar.',
+  'auth.registrationAccepted': 'Solicitud de registro enviada',
+  'auth.registrationGuidance':
+    'Intente iniciar sesión con el nombre de usuario y la contraseña que envió. Si este correo electrónico ya tiene una cuenta, los nuevos datos no se aplicarán. Inicie sesión con su cuenta original o recupere su contraseña. Antes de iniciar sesión, siga las instrucciones de verificación que proporcione la aplicación.',
   'auth.forgotTitle': 'Contraseña olvidada',
   'auth.forgotDescription':
     'Introduzca su correo electrónico y, si la cuenta existe, le enviaremos un enlace de restablecimiento.',
@@ -122,9 +224,8 @@ const systemEsES: SystemResource = {
   'auth.continueWith': 'Continuar con {provider}',
   'auth.about': 'Acerca de esta aplicación',
   'auth.platform': 'Plataforma de aplicaciones nativa de IA',
-  'auth.marketingTitleFirst': 'Deje que la IA construya con libertad.',
-  'auth.marketingTitleSecond': 'NocoBase lo mantiene',
-  'auth.marketingTitleThird': 'fiable.',
+  'auth.marketingTitleFirst': 'AI + NocoBase',
+  'auth.marketingTitleSecond': 'Build reliable business systems',
   'auth.marketingDescription':
     'Dé a la IA un framework de frontend flexible para dar forma a cada experiencia, mientras NocoBase protege por debajo los datos, los permisos y la gobernanza.',
   'auth.frontend': 'Frontend nativo de IA',
@@ -135,10 +236,14 @@ const systemEsES: SystemResource = {
     'Datos, control de acceso y gobernanza fiables.',
   'auth.marketingFooter': 'Libertad arriba. Confianza abajo.',
   'status.loading': 'Cargando',
+  'status.refreshing': 'Actualizando',
   'status.loadingPage': 'Cargando la página',
   'status.denied': 'Acceso denegado',
   'status.pageFailed': 'No se ha podido cargar la página',
   'status.retry': 'Reintentar',
+  'status.reloadPage': 'Volver a cargar la página',
+  'status.retryFailedDescription':
+    'Sigue sin poder cargarse. Volver a cargar toda la página puede ayudar; es posible que se pierdan los cambios no guardados de esta página.',
   'navigation.brandHome': 'Inicio de NocoBase',
   'navigation.brandApps': 'Aplicaciones de NocoBase',
   'routeOverlay.close': 'Cerrar',
@@ -146,8 +251,8 @@ const systemEsES: SystemResource = {
   'status.routeFailedDescription':
     'No se ha podido cargar la ruta {{label}} de {{packageName}}.',
   shell: {
-    buildFreely: 'La IA construye con libertad.',
-    reliability: '<brand>NocoBase</brand> lo mantiene fiable.',
+    brandPartnership: 'AI + <brand>NocoBase</brand>',
+    buildReliableSystems: 'Build reliable business systems',
   },
   home: {
     platform: 'NocoBase · Plataforma de aplicaciones nativa de IA',
@@ -360,7 +465,7 @@ const systemEsES: SystemResource = {
   },
 
   appearance: {
-    title: 'Apariencia',
+    title: 'Tema',
     mode: 'Modo de color',
     preset: 'Tema',
     light: 'Claro',
@@ -392,6 +497,7 @@ const systemEsES: SystemResource = {
     signingOut: 'Cerrando sesión…',
   },
   navigation: {
+    resources: 'Recursos',
     home: 'Inicio',
     open: 'Abrir la navegación',
     close: 'Cerrar la navegación',
@@ -403,6 +509,7 @@ const systemEsES: SystemResource = {
     breadcrumb: 'Ruta de navegación',
     breadcrumbMore: 'Mostrar los niveles intermedios',
     back: 'Volver',
+    backTo: 'Volver a {{label}}',
   },
   dataTable: {
     noResults: 'Sin resultados',
@@ -422,6 +529,7 @@ const systemEsES: SystemResource = {
   datePicker: {
     placeholder: 'Elija una fecha',
     rangePlaceholder: 'Elija un intervalo de fechas',
+    clear: 'Borrar',
   },
 };
 

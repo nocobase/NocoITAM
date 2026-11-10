@@ -1,6 +1,7 @@
 import type { AppResource } from './en-US.js';
 import agentChatIdID from '../extensions/nocobase-agent-chat/locales/id-ID.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/id-ID.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/id-ID.js';
 import adminIdID from './admin/id-ID.js';
 import systemIdID from './system/id-ID.js';
 
@@ -9,6 +10,9 @@ const idID: AppResource = {
   ...agentChatIdID,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   admin: adminIdID,
 
   appearance: {
@@ -2664,10 +2668,24 @@ const idID: AppResource = {
   },
   settings: {
     ...systemIdID.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: 'Log pemberitahuan',
+    notificationManagementDescription:
+      'Lacak pengiriman notifikasi dan lihat templat yang terdaftar beserta pratinjau konten sintetis.',
+    itamModule: {
+      title: 'Pengaturan manajemen aset',
+      description:
+        'Aturan penomoran, ambang pengingat, sinkronisasi perangkat, alur persetujuan, dan penerimaan dari surat jalan.',
+    },
+    apiKeysDescription:
+      'Kunci yang memungkinkan skrip dan integrasi memanggil API atas nama Anda.',
+    scheduledTasksDescription:
+      'Tugas yang berjalan sesuai jadwal, eksekusi terakhirnya, dan sakelarnya.',
     noRoleAccess:
       'Pengguna ini tetap dapat masuk dan menggunakan fungsi dasar akun. Peran tidak memberikan akses bisnis.',
     noAssignedRoles: 'Belum ada peran yang ditetapkan',
-    title: 'Pengaturan',
     deviceSyncRules: {
       title: 'Aturan tinjauan',
       description: 'Kapan perbedaan antara platform dan register diangkat',
@@ -2933,6 +2951,7 @@ const idID: AppResource = {
     },
     demo: {
       title: 'Data demo',
+      cardDescription: 'Impor atau setel ulang data demo perusahaan fiktif.',
       description:
         'Perusahaan fiktif, dalam bahasa Mandarin atau Inggris: perangkat, stok, lisensi, pembelian, perbaikan, stock opname, dan penghapusan, dengan beberapa masalah yang disengaja (pinjaman terlambat, lisensi melebihi alokasi, perbedaan stock opname, karyawan keluar yang masih memegang laptop), bertanggal relatif terhadap hari impor. Menghapus hanya menghapus apa yang dibuat oleh impor.',
       generate: 'Impor data demo',
@@ -3640,8 +3659,6 @@ const idID: AppResource = {
   shell: {
     ...systemIdID.shell,
     workspace: 'Ruang kerja aplikasi AI',
-    buildFreely: 'AI membangun dengan bebas.',
-    reliability: '<brand>NocoBase</brand> menjaganya tetap andal.',
   },
   auth: {
     welcome: 'Selamat datang kembali',
@@ -3693,9 +3710,6 @@ const idID: AppResource = {
       'Data, kontrol akses, alur kerja, dan tata kelola yang andal.',
     foundation: 'Fondasi NocoBase',
     marketingFooter: 'Bebas di atas. Tenang di bawah.',
-    marketingTitleFirst: 'Biarkan AI membangun dengan bebas.',
-    marketingTitleSecond: 'NocoBase menjaganya',
-    marketingTitleThird: 'tetap andal.',
     passwordMismatch: 'Kata sandi tidak cocok.',
   },
   status: {

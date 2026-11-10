@@ -326,6 +326,124 @@ const adminPtBR: AdminResource = {
       triggered: 'Disparada',
     },
   },
+  notificationTemplates: {
+    intro:
+      'Notificações que o sistema envia por conta própria: quando cada uma é enviada, quem a recebe e o que ela diz em cada idioma. Nada pode ser alterado aqui.',
+    search: 'Pesquisar',
+    searchPlaceholder: 'Nome ou descrição',
+    category: 'Categoria',
+    channel: 'Canal',
+    all: 'Todas',
+    empty: 'Nenhuma notificação registrada.',
+    whatOne: 'este modelo de notificação',
+    when: 'Quando é enviada',
+    who: 'Quem recebe',
+    conditions: 'Condições',
+    language: 'Idioma',
+    source: 'Fornecido por',
+    channels: 'Canais',
+    channelsHint:
+      'Estar configurado e ativado não garante que a conexão funcione.',
+    channelState: {
+      configured: 'Configurado',
+      unconfigured: 'Não configurado',
+      enabled: 'Ativado',
+      disabled: 'Desativado',
+      unknown: 'Desconhecido',
+    },
+    variables: 'Variáveis',
+    preview: 'Pré-visualização',
+    previewLanguage: 'Idioma da pré-visualização',
+    previewAllLanguages:
+      'Este e-mail inclui todos os idiomas de uma vez; todos os destinatários recebem a mesma mensagem.',
+    example: 'Exemplo',
+    definition: 'Modelo',
+    synthetic:
+      'Dados de exemplo fictícios. A pré-visualização não envia nada nem altera nada.',
+    html: 'Versão HTML',
+    channelTypes: {
+      'in-app': 'No app',
+      email: 'E-mail',
+    },
+    contributors: {
+      itam: 'NocoITAM',
+      users: 'Usuários',
+    },
+    categories: {
+      accounts: 'Contas',
+      devices: 'Dispositivos',
+      people: 'Pessoas',
+      comments: 'Comentários',
+    },
+    always:
+      'Nunca é enviada à pessoa cuja ação a causou, e cada destinatário a recebe uma única vez.',
+    itamLanguage:
+      'No idioma padrão do aplicativo, qualquer que seja o idioma da interface do destinatário; o texto de um comentário aparece como foi escrito.',
+    items: {
+      loanOverdue: {
+        name: 'Empréstimo atrasado',
+        trigger:
+          'A verificação noturna encontra um dispositivo emprestado após a data de devolução prevista.',
+        recipients: 'O responsável pelo dispositivo.',
+        rule: 'Uma vez por dispositivo e data de devolução prevista; um empréstimo que continua atrasado não é avisado de novo.',
+        variables: {
+          deviceNo: 'O número do dispositivo.',
+          date: 'A data de devolução prevista.',
+        },
+      },
+      leaverRecovery: {
+        name: 'Recolhimento de desligado',
+        trigger:
+          'A tarefa noturna prepara o recolhimento para uma pessoa marcada como desligada que ainda tem dispositivos, estoque ou licenças.',
+        recipients:
+          'Cada responsável por parte desses itens, informado apenas da sua parte.',
+        rule: 'Uma vez por pessoa desligada e responsável.',
+        variables: {
+          name: 'O nome da pessoa desligada.',
+          count: 'Quantos dos itens dela cabem ao destinatário resolver.',
+        },
+      },
+      commentMentioned: {
+        name: 'Mencionado em um comentário',
+        trigger: 'Um comentário em um registro menciona um colega com @.',
+        recipients: 'Cada colega mencionado.',
+        rule: 'Uma vez por comentário e pessoa.',
+        variables: {
+          actor: 'O autor do comentário.',
+          title: 'O registro comentado.',
+          text: 'O comentário, resumido, nas palavras do próprio autor.',
+        },
+      },
+      commentReplied: {
+        name: 'Resposta em uma conversa de comentários',
+        trigger: 'Alguém comenta um registro que outros já comentaram.',
+        recipients:
+          'Todos que escreveram na conversa; quem a resposta menciona com @ recebe o aviso de menção no lugar.',
+        rule: 'Uma vez por comentário e pessoa.',
+        variables: {
+          actor: 'O autor do comentário.',
+          title: 'O registro comentado.',
+          text: 'O comentário, resumido, nas palavras do próprio autor.',
+        },
+      },
+      usersInvitation: {
+        name: 'Convite de usuário',
+        trigger:
+          'Um administrador convida alguém, ou reenvia um convite, escolhendo o envio por e-mail.',
+        recipients: 'O endereço de e-mail da pessoa convidada.',
+        rule: 'Enviado com todo convite enviado por e-mail; não há chave para desativá-lo.',
+        language:
+          'Um único e-mail em todos os idiomas compatíveis, com o assunto em inglês; o idioma da pré-visualização não o altera.',
+        variables: {
+          app: 'O nome do aplicativo.',
+          inviter: 'Quem enviou o convite.',
+          items: 'As funções ou acessos concedidos.',
+          date: 'Quando o convite expira.',
+          url: 'O link de convite de uso único; a pré-visualização usa um fictício.',
+        },
+      },
+    },
+  },
 };
 
 export default adminPtBR;

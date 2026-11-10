@@ -4,6 +4,10 @@ import type settingsEnUS from './settings-en-US.js';
 // The template's Settings copy (client/locales/system/settings-en-US.ts): the
 // prepared Users and Roles pages and the permission editor, in pt-BR.
 const settings: LocaleResource<typeof settingsEnUS> = {
+  notificationManagementDescription:
+    'Veja os modelos de notificação registrados e as prévias com conteúdo sintético.',
+  notificationTemplates: 'Modelos de notificação',
+  notificationManagement: 'Gerenciamento de notificações',
   listChanged: 'A lista mudou. Tente novamente.',
   setup: {
     title: 'Pré-requisitos do recurso',
@@ -106,6 +110,19 @@ const settings: LocaleResource<typeof settingsEnUS> = {
 
   reload: 'Recarregar função',
   title: 'Configurações do sistema',
+  home: {
+    description:
+      'Contas, permissões, configuração do negócio e recursos do sistema estão todos aqui.',
+    empty: 'Ainda não há configurações disponíveis para você.',
+  },
+  categories: {
+    account: 'Contas e permissões',
+    business: 'Configuração do negócio',
+    ai: 'IA',
+    system: 'Sistema',
+  },
+  permissionManagementDescription:
+    'Defina o que cada função pode abrir e fazer e quais dados pode ver.',
   users: 'Usuários',
   roles: 'Funções e permissões',
   usersDescription: 'Gerencie contas, acessos e sessões ativas.',

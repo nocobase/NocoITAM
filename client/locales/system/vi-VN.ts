@@ -5,6 +5,104 @@ import inboxViVN from '#extensions/nocobase-inbox/locales/vi-VN';
 
 /** The Vietnamese copy of what the template ships; see `./en-US.ts`. */
 const systemViVN: SystemResource = {
+  databaseExplorer: {
+    title: 'Trình duyệt cơ sở dữ liệu',
+    description: 'Xem các kết nối cơ sở dữ liệu, bảng và trường của ứng dụng.',
+    connection: 'Kết nối',
+    chooseConnection: 'Chọn kết nối',
+    defaultConnection: 'Mặc định',
+    schemaManagement: {
+      managed: 'Do ứng dụng quản lý',
+      external: 'Được quản lý bên ngoài',
+    },
+    tables: 'Bảng',
+    tablesIn: 'Các bảng trong {{connection}}',
+    searchTables: 'Tìm theo tên bảng hoặc tiêu đề',
+    clearSearch: 'Xóa tìm kiếm',
+    tableCount_one: '{{count}} bảng',
+    tableCount_other: '{{count}} bảng',
+    tablesMatched_one: '{{count}}/{{total}} bảng khớp',
+    tablesMatched_other: '{{count}}/{{total}} bảng khớp',
+    loadingTables_one: 'Đang tải bảng… đã đọc {{count}}',
+    loadingTables_other: 'Đang tải bảng… đã đọc {{count}}',
+    truncated_one:
+      'Chỉ liệt kê {{count}} bảng đầu tiên; tìm kiếm chỉ áp dụng cho bảng này.',
+    truncated_other:
+      'Chỉ liệt kê {{count}} bảng đầu tiên; tìm kiếm chỉ áp dụng cho các bảng này.',
+    partial_one:
+      'Quá trình tải dừng sau {{count}} bảng; tìm kiếm chỉ áp dụng cho các bảng đã tải.',
+    partial_other:
+      'Quá trình tải dừng sau {{count}} bảng; tìm kiếm chỉ áp dụng cho các bảng đã tải.',
+    selectedHidden: 'Bảng đang mở “{{table}}” không khớp với tìm kiếm.',
+    kind: {
+      table: 'Bảng',
+      view: 'View',
+      materializedView: 'Materialized view',
+    },
+    kindLabel: 'Loại',
+    collectionName: 'Tên',
+    tableName: 'Bảng',
+    schema: 'Schema',
+    fields: 'Trường',
+    fieldsOf: 'Các trường của {{table}}',
+    searchFields: 'Tìm theo tên trường, tiêu đề hoặc kiểu',
+    fieldCount_one: '{{count}} trường',
+    fieldCount_other: '{{count}} trường',
+    fieldsMatched_one: '{{count}}/{{total}} trường khớp',
+    fieldsMatched_other: '{{count}}/{{total}} trường khớp',
+    column: {
+      field: 'Trường',
+      type: 'Kiểu',
+      nullable: 'Cho phép null',
+      references: 'Tham chiếu',
+    },
+    primaryKey: 'Khóa chính',
+    yes: 'Có',
+    no: 'Không',
+    notReported: 'Không có thông tin',
+    notApplicable: 'Không áp dụng',
+    relationNullable: 'Quan hệ, không phải cột',
+    nullableTag: {
+      yes: 'Cho phép null',
+      no: 'Không cho phép null',
+      unknown: 'Không rõ có cho phép null',
+    },
+    none: 'Không có',
+    warnings_one: '{{count}} ghi chú kiểm tra',
+    warnings_other: '{{count}} ghi chú kiểm tra',
+    warningDescription: 'Một số thông tin có thể chưa đầy đủ.',
+    backToTables: 'Tất cả bảng',
+    selectTable: 'Chọn một bảng để xem các trường.',
+    loading: 'Đang tải',
+    signIn: 'Đăng nhập',
+    retry: 'Thử lại',
+    notice: {
+      unauthenticated: 'Phiên đã hết hạn',
+      forbidden: 'Bạn không có quyền xem cơ sở dữ liệu',
+      connectionNotFound: 'Kết nối này không tồn tại',
+      tableNotFound: 'Bảng này không tồn tại trong kết nối',
+      unavailable: 'Cơ sở dữ liệu hiện không khả dụng',
+      failed: 'Không thể tải thông tin cơ sở dữ liệu',
+      noConnections: 'Chưa cấu hình kết nối cơ sở dữ liệu nào',
+      noTables: 'Kết nối này không có bảng nào',
+      noFields: 'Bảng này không có trường nào',
+      noResults: 'Không có kết quả',
+    },
+  },
+  pendingFeedback: {
+    working: 'Đang xử lý…',
+    longWait: 'Quá trình này lâu hơn bình thường. Bạn có thể tiếp tục chờ.',
+  },
+  taskProgress: {
+    queued: 'Đang chờ bắt đầu',
+    running: 'Đang thực hiện',
+    completed: 'Đã hoàn tất',
+    failed: 'Thất bại',
+    canceled: 'Đã hủy',
+    count: '{{processed}}/{{total}}',
+    processed: 'Đã xử lý {{processed}}',
+    background: 'Tác vụ vẫn tiếp tục chạy nếu bạn rời khỏi trang này.',
+  },
   listFeedback: {
     loading: 'Đang tải',
     empty: 'Chưa có dữ liệu',
@@ -77,6 +175,9 @@ const systemViVN: SystemResource = {
     'Đăng nhập bằng tên người dùng hoặc email và mật khẩu.',
   'auth.registerTitle': 'Tạo tài khoản',
   'auth.registerDescription': 'Tạo tài khoản để bắt đầu.',
+  'auth.registrationAccepted': 'Đã gửi yêu cầu đăng ký',
+  'auth.registrationGuidance':
+    'Hãy thử đăng nhập bằng tên người dùng và mật khẩu bạn vừa gửi. Nếu email này đã có tài khoản, thông tin mới sẽ không có hiệu lực. Hãy đăng nhập bằng tài khoản ban đầu hoặc khôi phục mật khẩu. Nếu ứng dụng có hướng dẫn xác minh, hãy làm theo trước khi đăng nhập.',
   'auth.forgotTitle': 'Quên mật khẩu',
   'auth.forgotDescription':
     'Nhập email của bạn, chúng tôi sẽ gửi liên kết đặt lại nếu tài khoản tồn tại.',
@@ -120,9 +221,8 @@ const systemViVN: SystemResource = {
   'auth.continueWith': 'Tiếp tục với {provider}',
   'auth.about': 'Về ứng dụng này',
   'auth.platform': 'Nền tảng ứng dụng thuần AI',
-  'auth.marketingTitleFirst': 'Để AI tự do xây dựng.',
-  'auth.marketingTitleSecond': 'NocoBase giữ cho nó',
-  'auth.marketingTitleThird': 'luôn tin cậy.',
+  'auth.marketingTitleFirst': 'AI + NocoBase',
+  'auth.marketingTitleSecond': 'Build reliable business systems',
   'auth.marketingDescription':
     'Trao cho AI một framework giao diện linh hoạt để định hình từng trải nghiệm, trong khi NocoBase bảo vệ dữ liệu, quyền hạn và việc quản trị bên dưới.',
   'auth.frontend': 'Giao diện thuần AI',
@@ -133,10 +233,14 @@ const systemViVN: SystemResource = {
     'Dữ liệu, kiểm soát truy cập và quản trị đáng tin cậy.',
   'auth.marketingFooter': 'Tự do ở bên trên. Vững tin ở bên dưới.',
   'status.loading': 'Đang tải',
+  'status.refreshing': 'Đang làm mới',
   'status.loadingPage': 'Đang tải trang',
   'status.denied': 'Không có quyền truy cập',
   'status.pageFailed': 'Không thể tải trang',
   'status.retry': 'Thử lại',
+  'status.reloadPage': 'Tải lại trang',
+  'status.retryFailedDescription':
+    'Vẫn không thể tải. Tải lại toàn bộ trang có thể giúp ích; các thay đổi chưa lưu trên trang này có thể bị mất.',
   'navigation.brandHome': 'Trang chủ NocoBase',
   'navigation.brandApps': 'Ứng dụng NocoBase',
   'routeOverlay.close': 'Đóng',
@@ -144,8 +248,8 @@ const systemViVN: SystemResource = {
   'status.routeFailedDescription':
     'Không thể tải route {{label}} từ {{packageName}}.',
   shell: {
-    buildFreely: 'AI tự do xây dựng.',
-    reliability: '<brand>NocoBase</brand> giữ cho nó luôn tin cậy.',
+    brandPartnership: 'AI + <brand>NocoBase</brand>',
+    buildReliableSystems: 'Build reliable business systems',
   },
   home: {
     platform: 'NocoBase · Nền tảng ứng dụng thuần AI',
@@ -357,7 +461,7 @@ const systemViVN: SystemResource = {
   },
 
   appearance: {
-    title: 'Giao diện',
+    title: 'Chủ đề',
     mode: 'Chế độ màu',
     preset: 'Chủ đề',
     light: 'Sáng',
@@ -389,6 +493,7 @@ const systemViVN: SystemResource = {
     signingOut: 'Đang đăng xuất…',
   },
   navigation: {
+    resources: 'Tài nguyên',
     home: 'Trang chủ',
     open: 'Mở điều hướng',
     close: 'Đóng điều hướng',
@@ -400,6 +505,7 @@ const systemViVN: SystemResource = {
     breadcrumb: 'Đường dẫn',
     breadcrumbMore: 'Hiện các cấp ở giữa',
     back: 'Quay lại',
+    backTo: 'Quay lại {{label}}',
   },
   dataTable: {
     noResults: 'Không có kết quả',
@@ -419,6 +525,7 @@ const systemViVN: SystemResource = {
   datePicker: {
     placeholder: 'Chọn ngày',
     rangePlaceholder: 'Chọn khoảng ngày',
+    clear: 'Xóa',
   },
 };
 

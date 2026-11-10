@@ -10,6 +10,7 @@ import {
   ValidationError,
 } from './errors.js';
 import type { HistoryEventRecord, HistoryService } from './history.js';
+import { itamMessages } from './notification-messages.js';
 import type { ItamNotifier } from './notifier.js';
 import { isFileId } from './attachments.js';
 
@@ -319,11 +320,7 @@ export function createCommentService(
         key: `comment:${comment.id}:mentioned`,
         to: mentioned,
         actorId,
-        title: {
-          key: 'notifications.commentMentioned',
-          params: { actor: actorName, title },
-        },
-        body: { text },
+        ...itamMessages.commentMentioned({ actor: actorName, title, text }),
         url,
         source,
       });
@@ -333,11 +330,7 @@ export function createCommentService(
         key: `comment:${comment.id}:replied`,
         to: replied,
         actorId,
-        title: {
-          key: 'notifications.commentReplied',
-          params: { actor: actorName, title },
-        },
-        body: { text },
+        ...itamMessages.commentReplied({ actor: actorName, title, text }),
         url,
         source,
       });

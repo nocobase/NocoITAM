@@ -1,0 +1,35 @@
+diff --git a/dist/client/components/demo-mode-notice.js b/dist/client/components/demo-mode-notice.js
+index 0ab6dc68dea6860876e08947a251ee5b8c0a0d52..b3ed54b3c9fcf459e0b9c09b9ba1499f0490ab44 100644
+--- a/dist/client/components/demo-mode-notice.js
++++ b/dist/client/components/demo-mode-notice.js
+@@ -8,12 +8,24 @@ import { demoAccountCache } from '../account-cache.js';
+ import { DemoModeContext } from '../demo-mode-context.js';
+ import { DEMO_MODE_NAMESPACE, DEMO_SERVER_TIMING_METRIC, } from '../namespace.js';
+ const REFUSED_TOAST_ID = 'demo-mode-refused';
+-function entryRoutes(routes) {
+-    return routes.map((route) => ({
+-        path: route.path,
+-        handle: route.auth,
+-        children: entryRoutes(route.children ?? []),
+-    }));
++// Patched in NocoITAM (2026-11-10) until the plugin fixes it: registered paths are absolute, so each is nested
++// relative to its parent's, as the application's router does (template relativeRoutePath / childRouteParentPath).
++// Nested groups sharing their parent's path, such as the System settings categories, made matchRoutes throw.
++function entryRoutes(routes, parentPath = '') {
++    return routes.map((route) => {
++        const own = route.path.replace(/\/$/, '');
++        const inside = parentPath.startsWith(`${own}/`);
++        const path = !parentPath
++            ? route.path
++            : route.path === parentPath || inside
++                ? ''
++                : route.path.slice(parentPath === '/' ? 1 : parentPath.length + 1);
++        return {
++            path,
++            handle: route.auth,
++            children: entryRoutes(route.children ?? [], inside ? parentPath : route.path),
++        };
++    });
+ }
+ /** Whether a finished request's response says the server refused one of its writes. */
+ function isRefusedEntry(entry) {

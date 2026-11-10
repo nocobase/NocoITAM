@@ -1,8 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useState, type ReactElement } from 'react';
 
-import { PageContainer } from '#components/page-container';
-import { PageHeader } from '#components/page-header';
 import { MultiReferenceInput } from '@/components/itam/multi-reference';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -11,21 +9,20 @@ import { useItamSettings, type ItamSettings } from '@/lib/itam/api';
 import { DeviceSyncCard } from './device-sync-card';
 import { NumberField, SettingsCard } from './settings-parts';
 import { useSave } from './use-settings-save';
+import { SettingsModulePage } from '../../settings/settings-module-page.js';
 
 /** 设置 → MDM: the platforms' connections, and when a difference is raised. */
 export default function MdmSettingsPage(): ReactElement {
-  const { t } = useTranslation();
   const settings = useItamSettings();
   return (
-    <PageContainer>
-      <PageHeader title={t('settings.deviceSync.title')} />
+    <SettingsModulePage>
       <div className='flex max-w-4xl flex-col gap-4'>
         <DeviceSyncCard />
         {settings.data ? (
           <DeviceSyncRulesCard value={settings.data.deviceSync} />
         ) : null}
       </div>
-    </PageContainer>
+    </SettingsModulePage>
   );
 }
 

@@ -1,6 +1,7 @@
 import type { AppResource } from './en-US.js';
 import agentChatZhTW from '../extensions/nocobase-agent-chat/locales/zh-TW.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/zh-TW.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/zh-TW.js';
 import adminZhTW from './admin/zh-TW.js';
 import systemZhTW from './system/zh-TW.js';
 
@@ -9,6 +10,9 @@ const zhTW: AppResource = {
   ...agentChatZhTW,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   admin: adminZhTW,
 
   appearance: {
@@ -2484,9 +2488,20 @@ const zhTW: AppResource = {
   },
   settings: {
     ...systemZhTW.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: '通知日誌',
+    notificationManagementDescription:
+      '追蹤通知的傳送情況，查看已登記的通知範本和合成內容預覽。',
+    itamModule: {
+      title: '資產管理設定',
+      description: '編號規則、提醒門檻、設備同步、簽核流程和依送貨單入庫。',
+    },
+    apiKeysDescription: '讓指令碼和整合以你的身分呼叫 API 的金鑰。',
+    scheduledTasksDescription: '依排程執行的任務、最近的執行情況和開關。',
     noRoleAccess: '此使用者仍可登入並使用帳號基本功能，角色未授予業務存取權。',
     noAssignedRoles: '未指派角色',
-    title: '設定',
     deviceSyncRules: {
       title: '核對規則',
       description: 'MDM 與清冊不一致時，什麼情況下提示',
@@ -2729,6 +2744,7 @@ const zhTW: AppResource = {
     },
     demo: {
       title: '示範資料',
+      cardDescription: '匯入或重設虛構公司的示範資料。',
       description:
         '一家虛構的公司，有中文和英文兩個版本：設備、庫存、授權、採購、維修、盤點和報廢，並刻意帶有幾個問題（逾期借用、超配授權、盤點差異、已離職仍持有電腦），日期以匯入當天為基準。清除只會刪除匯入的資料。',
       generate: '匯入示範資料',
@@ -3442,9 +3458,6 @@ const zhTW: AppResource = {
     foundationDescription: '可靠的資料、存取控制、工作流程與治理。',
     foundation: 'NocoBase 基礎能力',
     marketingFooter: '自由建構，可靠支撐。',
-    marketingTitleFirst: '讓 AI 自由建構。',
-    marketingTitleSecond: 'NocoBase 保障',
-    marketingTitleThird: '可靠運作。',
     passwordMismatch: '兩次輸入的密碼不一致。',
   },
   status: {

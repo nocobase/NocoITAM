@@ -10,7 +10,13 @@ import { reconcileGrants } from './reconcile-grants.js';
 import { restoreModelPictures } from './model-pictures.js';
 import type { Application } from '@nocobase/app-server/application';
 import { authorizationToken } from '@nocobase/app-plugin-authorization/server';
-import { notificationServiceToken } from '@nocobase/app-plugin-notification/server';
+import {
+  describeNotificationTemplateChannel,
+  notificationServiceToken,
+  notificationTemplateRegistryToken,
+  type NotificationConfigInput,
+} from '@nocobase/app-plugin-notification/server';
+import { itamNotificationTemplates } from './notification-templates.js';
 import type { AppI18nConfig } from '@nocobase/app-server/i18n';
 import { jobExecutorServiceToken } from '@nocobase/app-server/jobs';
 import { loggingToken } from '@nocobase/app-server/logging';
@@ -371,6 +377,8 @@ export default class ItamProvider extends ServiceProvider<Application> {
    * container does not.
    */
   private lifecycleJobs: LifecycleJobs | undefined;
+  /** Releases ITAM's notification templates (template 1.0.0-beta.92). */
+  private releaseTemplates: (() => void)[] = [];
 
   private effectJobs(): LifecycleJobs | undefined {
     const container = this.app.container;
@@ -960,6 +968,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
   }
 
   public override async shutdown(): Promise<void> {
+    for (const release of this.releaseTemplates.splice(0)) release();
     await this.lifecycleJobs?.shutdown();
   }
 
@@ -974,6 +983,40 @@ export default class ItamProvider extends ServiceProvider<Application> {
             this.app.container.resolve(databaseManagerToken).connection(),
           ),
         );
+    // ITAM's notifications in the template's notification templates
+    // directory (template 1.0.0-beta.92, notification-templates.ts): read
+    // only, previews rendered on synthetic values in the server's languages.
+    if (this.app.container.has(notificationTemplateRegistryToken)) {
+      const registry = this.app.container.resolve(
+        notificationTemplateRegistryToken,
+      );
+      const i18n = this.app.container.has(i18nToken)
+        ? this.app.container.resolve(i18nToken)
+        : undefined;
+      const fallback = i18n?.getDefaultLocale() ?? 'en-US';
+      const locales = [
+        fallback,
+        ...(i18n?.getLocales() ?? []).filter((locale) => locale !== fallback),
+      ];
+      for (const definition of itamNotificationTemplates({
+        locales,
+        translate: async (locale, text) => {
+          if ('text' in text) return text.text;
+          if (!i18n) return text.key;
+          await i18n.ensureLocaleLoaded(locale);
+          return i18n.getFixedT('itam', locale)(text.key, { ...text.params });
+        },
+        // The channel the notifier sends through (notifier.ts): described,
+        // never probed.
+        channels: () => [
+          describeNotificationTemplateChannel(
+            this.app.config.get<NotificationConfigInput>('notification'),
+            'in-app',
+          ),
+        ],
+      }))
+        this.releaseTemplates.push(registry.register(definition));
+    }
     // Defined before any page subscribes, which a topic must be.
     if (this.app.container.has(realtimeServiceToken))
       this.changesTopic ??= this.app.container

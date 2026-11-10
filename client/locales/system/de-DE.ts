@@ -5,6 +5,106 @@ import inboxDeDE from '#extensions/nocobase-inbox/locales/de-DE';
 
 /** The German copy of what the template ships; see `./en-US.ts`. */
 const systemDeDE: SystemResource = {
+  databaseExplorer: {
+    title: 'Datenbank-Explorer',
+    description:
+      'Datenbankverbindungen, Tabellen und Felder der Anwendung durchsuchen.',
+    connection: 'Verbindung',
+    chooseConnection: 'Verbindung wählen',
+    defaultConnection: 'Standard',
+    schemaManagement: {
+      managed: 'Von der Anwendung verwaltet',
+      external: 'Extern verwaltet',
+    },
+    tables: 'Tabellen',
+    tablesIn: 'Tabellen in {{connection}}',
+    searchTables: 'Nach Tabellenname oder Titel suchen',
+    clearSearch: 'Suche löschen',
+    tableCount_one: '{{count}} Tabelle',
+    tableCount_other: '{{count}} Tabellen',
+    tablesMatched_one: '{{count}} von {{total}} Tabellen passt',
+    tablesMatched_other: '{{count}} von {{total}} Tabellen passen',
+    loadingTables_one: 'Tabellen werden geladen… bisher {{count}} gelesen',
+    loadingTables_other: 'Tabellen werden geladen… bisher {{count}} gelesen',
+    truncated_one:
+      'Nur die erste Tabelle ({{count}}) wird aufgeführt; die Suche umfasst nur diese.',
+    truncated_other:
+      'Nur die ersten {{count}} Tabellen werden aufgeführt; die Suche umfasst nur diese Tabellen.',
+    partial_one:
+      'Das Laden wurde nach {{count}} Tabelle abgebrochen; die Suche umfasst nur diese Tabelle.',
+    partial_other:
+      'Das Laden wurde nach {{count}} Tabellen abgebrochen; die Suche umfasst nur diese Tabellen.',
+    selectedHidden:
+      'Die geöffnete Tabelle „{{table}}“ entspricht nicht der Suche.',
+    kind: {
+      table: 'Tabelle',
+      view: 'Ansicht',
+      materializedView: 'Materialisierte Ansicht',
+    },
+    kindLabel: 'Art',
+    collectionName: 'Name',
+    tableName: 'Tabelle',
+    schema: 'Schema',
+    fields: 'Felder',
+    fieldsOf: 'Felder von {{table}}',
+    searchFields: 'Nach Feldname, Titel oder Typ suchen',
+    fieldCount_one: '{{count}} Feld',
+    fieldCount_other: '{{count}} Felder',
+    fieldsMatched_one: '{{count}} von {{total}} Feldern passt',
+    fieldsMatched_other: '{{count}} von {{total}} Feldern passen',
+    column: {
+      field: 'Feld',
+      type: 'Typ',
+      nullable: 'Nullwerte zulässig',
+      references: 'Verweist auf',
+    },
+    primaryKey: 'Primärschlüssel',
+    yes: 'Ja',
+    no: 'Nein',
+    notReported: 'Nicht angegeben',
+    notApplicable: 'Nicht zutreffend',
+    relationNullable: 'Beziehung, keine Spalte',
+    nullableTag: {
+      yes: 'Nullwerte zulässig',
+      no: 'Nicht null',
+      unknown: 'Nullwerte: keine Angabe',
+    },
+    none: 'Keine',
+    warnings_one: '{{count}} Prüfhinweis',
+    warnings_other: '{{count}} Prüfhinweise',
+    warningDescription: 'Einige Angaben sind möglicherweise unvollständig.',
+    backToTables: 'Alle Tabellen',
+    selectTable: 'Wählen Sie eine Tabelle, um ihre Felder anzuzeigen.',
+    loading: 'Wird geladen',
+    signIn: 'Anmelden',
+    retry: 'Erneut versuchen',
+    notice: {
+      unauthenticated: 'Sitzung abgelaufen',
+      forbidden: 'Sie haben keine Berechtigung, Datenbanken zu durchsuchen',
+      connectionNotFound: 'Diese Verbindung existiert nicht',
+      tableNotFound: 'Diese Tabelle existiert in der Verbindung nicht',
+      unavailable: 'Die Datenbank ist derzeit nicht verfügbar',
+      failed: 'Datenbankinformationen konnten nicht geladen werden',
+      noConnections: 'Es sind keine Datenbankverbindungen konfiguriert',
+      noTables: 'Diese Verbindung hat keine Tabellen',
+      noFields: 'Diese Tabelle hat keine Felder',
+      noResults: 'Keine Ergebnisse',
+    },
+  },
+  pendingFeedback: {
+    working: 'Wird bearbeitet…',
+    longWait: 'Das dauert länger als üblich. Sie können weiter warten.',
+  },
+  taskProgress: {
+    queued: 'Wartet auf Start',
+    running: 'In Bearbeitung',
+    completed: 'Abgeschlossen',
+    failed: 'Fehlgeschlagen',
+    canceled: 'Abgebrochen',
+    count: '{{processed}} von {{total}}',
+    processed: '{{processed}} verarbeitet',
+    background: 'Die Aufgabe läuft weiter, wenn Sie diese Seite verlassen.',
+  },
   listFeedback: {
     loading: 'Wird geladen',
     empty: 'Noch keine Daten',
@@ -80,6 +180,9 @@ const systemDeDE: SystemResource = {
     'Melden Sie sich mit Benutzername oder E-Mail-Adresse und Passwort an.',
   'auth.registerTitle': 'Konto erstellen',
   'auth.registerDescription': 'Erstellen Sie ein Konto, um loszulegen.',
+  'auth.registrationAccepted': 'Registrierungsanfrage gesendet',
+  'auth.registrationGuidance':
+    'Versuchen Sie, sich mit dem angegebenen Benutzernamen und Passwort anzumelden. Wenn für diese E-Mail-Adresse bereits ein Konto besteht, werden die neuen Angaben nicht übernommen. Melden Sie sich mit Ihrem bisherigen Konto an oder setzen Sie Ihr Passwort zurück. Befolgen Sie vor der Anmeldung die Verifizierungsanweisungen der Anwendung, falls vorhanden.',
   'auth.forgotTitle': 'Passwort vergessen',
   'auth.forgotDescription':
     'Geben Sie Ihre E-Mail-Adresse ein; wenn das Konto existiert, senden wir Ihnen einen Link zum Zurücksetzen.',
@@ -124,9 +227,8 @@ const systemDeDE: SystemResource = {
   'auth.continueWith': 'Weiter mit {provider}',
   'auth.about': 'Über diese Anwendung',
   'auth.platform': 'KI-native Anwendungsplattform',
-  'auth.marketingTitleFirst': 'Die KI baut frei.',
-  'auth.marketingTitleSecond': 'NocoBase macht es',
-  'auth.marketingTitleThird': 'verlässlich.',
+  'auth.marketingTitleFirst': 'AI + NocoBase',
+  'auth.marketingTitleSecond': 'Build reliable business systems',
   'auth.marketingDescription':
     'Geben Sie der KI ein flexibles Frontend-Framework, um jede Oberfläche zu gestalten, während NocoBase darunter Daten, Berechtigungen und Governance absichert.',
   'auth.frontend': 'KI-natives Frontend',
@@ -137,10 +239,14 @@ const systemDeDE: SystemResource = {
     'Verlässliche Daten, Zugriffskontrolle und Governance.',
   'auth.marketingFooter': 'Oben Freiheit. Unten Verlässlichkeit.',
   'status.loading': 'Wird geladen',
+  'status.refreshing': 'Wird aktualisiert',
   'status.loadingPage': 'Seite wird geladen',
   'status.denied': 'Zugriff verweigert',
   'status.pageFailed': 'Seite kann nicht geladen werden',
   'status.retry': 'Erneut versuchen',
+  'status.reloadPage': 'Seite neu laden',
+  'status.retryFailedDescription':
+    'Die Seite konnte weiterhin nicht geladen werden. Das Neuladen der ganzen Seite kann helfen; nicht gespeicherte Änderungen auf dieser Seite können verloren gehen.',
   'navigation.brandHome': 'NocoBase-Startseite',
   'navigation.brandApps': 'NocoBase-Anwendungen',
   'routeOverlay.close': 'Schließen',
@@ -149,8 +255,8 @@ const systemDeDE: SystemResource = {
   'status.routeFailedDescription':
     'Die Route {{label}} aus {{packageName}} konnte nicht geladen werden.',
   shell: {
-    buildFreely: 'Die KI baut frei.',
-    reliability: '<brand>NocoBase</brand> macht es verlässlich.',
+    brandPartnership: 'AI + <brand>NocoBase</brand>',
+    buildReliableSystems: 'Build reliable business systems',
   },
   home: {
     platform: 'NocoBase · KI-native Anwendungsplattform',
@@ -364,7 +470,7 @@ const systemDeDE: SystemResource = {
   },
 
   appearance: {
-    title: 'Darstellung',
+    title: 'Design',
     mode: 'Farbmodus',
     preset: 'Design',
     light: 'Hell',
@@ -396,6 +502,7 @@ const systemDeDE: SystemResource = {
     signingOut: 'Abmeldung läuft…',
   },
   navigation: {
+    resources: 'Ressourcen',
     home: 'Startseite',
     open: 'Navigation öffnen',
     close: 'Navigation schließen',
@@ -407,6 +514,7 @@ const systemDeDE: SystemResource = {
     breadcrumb: 'Brotkrümelnavigation',
     breadcrumbMore: 'Zwischenebenen anzeigen',
     back: 'Zurück',
+    backTo: 'Zurück zu {{label}}',
   },
   dataTable: {
     noResults: 'Keine Ergebnisse',
@@ -426,6 +534,7 @@ const systemDeDE: SystemResource = {
   datePicker: {
     placeholder: 'Datum wählen',
     rangePlaceholder: 'Zeitraum wählen',
+    clear: 'Leeren',
   },
 };
 

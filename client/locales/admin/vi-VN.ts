@@ -324,6 +324,124 @@ const adminViVN: AdminResource = {
       triggered: 'Đã kích hoạt',
     },
   },
+  notificationTemplates: {
+    intro:
+      'Các thông báo hệ thống tự gửi: mỗi loại được gửi khi nào, ai nhận và nội dung ở từng ngôn ngữ. Không thể thay đổi gì ở đây.',
+    search: 'Tìm kiếm',
+    searchPlaceholder: 'Tên hoặc mô tả',
+    category: 'Danh mục',
+    channel: 'Kênh',
+    all: 'Tất cả',
+    empty: 'Chưa có thông báo nào được đăng ký.',
+    whatOne: 'mẫu thông báo này',
+    when: 'Khi nào gửi',
+    who: 'Ai nhận',
+    conditions: 'Điều kiện gửi',
+    language: 'Ngôn ngữ',
+    source: 'Cung cấp bởi',
+    channels: 'Kênh gửi',
+    channelsHint:
+      'Đã thiết lập và đã bật không có nghĩa là kết nối chắc chắn hoạt động.',
+    channelState: {
+      configured: 'Đã thiết lập',
+      unconfigured: 'Chưa thiết lập',
+      enabled: 'Đã bật',
+      disabled: 'Đã tắt',
+      unknown: 'Không rõ',
+    },
+    variables: 'Biến',
+    preview: 'Xem trước',
+    previewLanguage: 'Ngôn ngữ xem trước',
+    previewAllLanguages:
+      'Email này gồm tất cả các ngôn ngữ cùng lúc; mọi người nhận đều nhận cùng một nội dung.',
+    example: 'Ví dụ',
+    definition: 'Mẫu gốc',
+    synthetic:
+      'Dữ liệu mẫu hư cấu. Xem trước không gửi gì và không thay đổi gì.',
+    html: 'Bản HTML',
+    channelTypes: {
+      'in-app': 'Trong ứng dụng',
+      email: 'Email',
+    },
+    contributors: {
+      itam: 'NocoITAM',
+      users: 'Người dùng',
+    },
+    categories: {
+      accounts: 'Tài khoản',
+      devices: 'Thiết bị',
+      people: 'Nhân sự',
+      comments: 'Bình luận',
+    },
+    always:
+      'Không bao giờ gửi cho người có thao tác gây ra thông báo, và mỗi người nhận chỉ nhận một lần.',
+    itamLanguage:
+      'Bằng ngôn ngữ mặc định của ứng dụng, bất kể ngôn ngữ giao diện của người nhận; nội dung bình luận hiển thị đúng như khi viết.',
+    items: {
+      loanOverdue: {
+        name: 'Quá hạn trả thiết bị mượn',
+        trigger:
+          'Lần kiểm tra ban đêm phát hiện thiết bị đang cho mượn đã quá ngày trả dự kiến.',
+        recipients: 'Người phụ trách thiết bị.',
+        rule: 'Một lần cho mỗi thiết bị và ngày trả dự kiến; khoản mượn vẫn quá hạn sẽ không được báo lại.',
+        variables: {
+          deviceNo: 'Mã thiết bị.',
+          date: 'Ngày trả dự kiến.',
+        },
+      },
+      leaverRecovery: {
+        name: 'Thu hồi khi nghỉ việc',
+        trigger:
+          'Tác vụ ban đêm chuẩn bị thu hồi cho người đã đánh dấu nghỉ việc nhưng vẫn giữ thiết bị, tồn kho hoặc suất giấy phép.',
+        recipients:
+          'Mỗi người phụ trách một phần tài sản đó, chỉ được báo phần của mình.',
+        rule: 'Một lần cho mỗi người nghỉ việc và người phụ trách.',
+        variables: {
+          name: 'Tên người nghỉ việc.',
+          count: 'Số tài sản người nhận cần xử lý.',
+        },
+      },
+      commentMentioned: {
+        name: 'Được nhắc đến trong bình luận',
+        trigger: 'Bình luận trên một bản ghi nhắc đến đồng nghiệp bằng @.',
+        recipients: 'Từng đồng nghiệp được nhắc đến.',
+        rule: 'Mỗi người chỉ một lần cho mỗi bình luận.',
+        variables: {
+          actor: 'Người viết bình luận.',
+          title: 'Bản ghi được bình luận.',
+          text: 'Nội dung bình luận, rút gọn, giữ nguyên lời người viết.',
+        },
+      },
+      commentReplied: {
+        name: 'Trả lời trong chuỗi bình luận',
+        trigger: 'Có người bình luận trên bản ghi mà người khác đã bình luận.',
+        recipients:
+          'Mọi người đã viết trong chuỗi thảo luận; người được @-nhắc đến trong câu trả lời sẽ nhận thông báo nhắc đến thay vào đó.',
+        rule: 'Mỗi người chỉ một lần cho mỗi bình luận.',
+        variables: {
+          actor: 'Người viết bình luận.',
+          title: 'Bản ghi được bình luận.',
+          text: 'Nội dung bình luận, rút gọn, giữ nguyên lời người viết.',
+        },
+      },
+      usersInvitation: {
+        name: 'Lời mời người dùng',
+        trigger:
+          'Quản trị viên mời ai đó hoặc gửi lại lời mời, và chọn gửi qua email.',
+        recipients: 'Địa chỉ email của người được mời.',
+        rule: 'Được gửi với mọi lời mời gửi qua email; không có công tắc để tắt.',
+        language:
+          'Một email gồm tất cả ngôn ngữ được hỗ trợ, tiêu đề bằng tiếng Anh; đổi ngôn ngữ xem trước không làm thay đổi nội dung.',
+        variables: {
+          app: 'Tên ứng dụng.',
+          inviter: 'Người gửi lời mời.',
+          items: 'Vai trò hoặc quyền truy cập được cấp.',
+          date: 'Thời điểm lời mời hết hạn.',
+          url: 'Liên kết mời dùng một lần; bản xem trước dùng liên kết hư cấu.',
+        },
+      },
+    },
+  },
 };
 
 export default adminViVN;
