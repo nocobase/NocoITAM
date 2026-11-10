@@ -5,9 +5,150 @@ import {
 } from '@nocobase/app-client/plugins';
 import { describe, expect, it } from 'vitest';
 
-import applicationRoutes from '../../client/routes.ts';
+import applicationRoutes, {
+  createApplicationRoutes,
+} from '../../client/routes.ts';
+import { includeNotificationTemplateRoutes } from '../../client/pages/settings/notification-routes.js';
+import { defineAppRoutes } from '@nocobase/app-client/plugins';
 
 describe('app client routes', () => {
+  it('joins the settings system category across contributions without moving the log URL', () => {
+    const shell = defineAppRoutes([
+      {
+        name: 'settings',
+        path: '/settings',
+        navigation: { title: 'Settings' },
+        children: [
+          {
+            name: 'settingsSystem',
+            navigation: { title: 'System' },
+            children: [],
+          },
+        ],
+      },
+    ]);
+    const logs = defineAppRoutes([
+      {
+        name: 'notificationManagement',
+        parent: 'settingsSystem',
+        navigation: { title: 'Notifications' },
+        children: [
+          {
+            name: 'notificationLogs',
+            path: '/notifications/logs',
+            auth: 'required',
+            authz: {
+              resource: { type: 'page', id: 'notification.logs' },
+              action: 'access',
+            },
+            componentLoader: () =>
+              import('../../client/pages/settings/notification-templates.js'),
+          },
+        ],
+      },
+    ]);
+    const routes = includeNotificationTemplateRoutes([shell, logs], true);
+    const built = resolveAppClientContributions([
+      {
+        packageName: '@nocobase/app-template-default',
+        source: 'application',
+        routes,
+      },
+    ]);
+    expect(pagePaths(built.routes)).toEqual([
+      '/settings/notifications/logs',
+      '/settings/notifications/templates',
+    ]);
+    expect(built.routes[0].children[0].children).toHaveLength(1);
+    const created = includeNotificationTemplateRoutes([shell], true);
+    expect(
+      created
+        .flatMap((part) => part.routes)
+        .find((route) => route.name === 'notificationManagement')?.parent,
+    ).toBe('settingsSystem');
+  });
+
+  // ITAM sends notifications of its own, so the module is there whatever
+  // the invitation mailer: ITAM declares it, templates first, then the
+  // delivery logs, a template opening in a drawer (2026-11-10, as NocoCRM).
+  it('exposes the notification templates and logs through the real application route factory', async () => {
+    const built = resolveAppClientContributions([
+      {
+        packageName: '@nocobase/app-template-default',
+        source: 'application',
+        routes: createApplicationRoutes(),
+      },
+    ]);
+    expect(pagePaths(built.routes)).toEqual(
+      expect.arrayContaining([
+        '/settings/notifications/templates',
+        '/settings/notifications/templates/:templateId',
+        '/settings/notifications/logs',
+      ]),
+    );
+    expect(pageAuthorizations(built.routes)).toEqual(
+      expect.arrayContaining([
+        {
+          name: 'notificationTemplates',
+          authorizedAs: 'notification.templates',
+        },
+        { name: 'notificationTemplate', authorizedAs: null },
+        { name: 'notificationLogs', authorizedAs: 'notification.logs' },
+      ]),
+    );
+    for (const loader of componentLoadersIn(built.routes))
+      await expect(loader()).resolves.toMatchObject({
+        default: expect.any(Function),
+      });
+  });
+
+  it('reuses the notification module and preserves its logs and existing grants', () => {
+    const existing = defineAppRoutes([
+      {
+        name: 'settings',
+        path: '/settings',
+        navigation: { title: 'Settings' },
+        children: [
+          {
+            name: 'notificationManagement',
+            navigation: { title: 'Notifications' },
+            children: [
+              {
+                name: 'notificationLogs',
+                path: '/notification-logs',
+                auth: 'required',
+                authz: {
+                  resource: { type: 'page', id: 'existing.notification.logs' },
+                  action: 'access',
+                },
+                componentLoader: () =>
+                  import('../../client/pages/settings/notification-templates.js'),
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+    const once = includeNotificationTemplateRoutes([existing], false);
+    expect(includeNotificationTemplateRoutes(once, true)).toBe(once);
+    const built = resolveAppClientContributions([
+      {
+        packageName: '@nocobase/app-template-default',
+        source: 'application',
+        routes: once,
+      },
+    ]);
+    expect(pagePaths(built.routes)).toEqual([
+      '/settings/notification-logs',
+      '/settings/notifications/templates',
+    ]);
+    expect(pageAuthorizations(built.routes)).toEqual([
+      { name: 'notificationLogs', authorizedAs: 'existing.notification.logs' },
+      { name: 'notificationTemplates', authorizedAs: 'notification.templates' },
+    ]);
+    expect(built.routes[0].children).toHaveLength(1);
+  });
+
   it('keeps the landing page and the authentication pages', () => {
     // The authentication plugin and this application have to agree on these paths: it sends an unknown visitor to
     // /login, sends a signed-in user who opens a guest page back to /, and mails a reset link to /reset-password,
@@ -89,15 +230,18 @@ describe('app client routes', () => {
       'skills',
       'settings:agents.services',
       'usage',
-      // 设置, one page of tabs (2026-10-16): the page itself checks nothing,
-      // API keys being everyone's; ITAM's tabs check the grant the settings
-      // page always had, and the administration pages what the plugin's own
-      // API checks. 报废流程 (2026-10-18) is one of ITAM's.
+      // 系统设置 (template 1.0.0-beta.92, 2026-11-10): the home checks
+      // nothing, listing what its viewer may open, and API keys are
+      // everyone's; each module checks what it checked as a tab of ITAM's
+      // former settings page. 业务配置 first (ITAM's order, 2026-11-10):
+      // ITAM's four tabs, the grant its settings always had.
+      // 报废流程 (2026-10-18) is one of them. Then the demo data.
       'itam-settings',
       'itam-settings',
       'itam-settings',
       'itam-settings',
-      // NocoBase 3's prepared Users page (2026-10-24): the list, creating
+      'itam-settings',
+      // 账号与权限: NocoBase 3's prepared Users page (2026-10-24): the list, creating
       // and inviting check the users plugin's own actions.
       'user:*',
       'user:*',
@@ -107,8 +251,13 @@ describe('app client routes', () => {
       'settings:authorization.permission-sets',
       'settings:authorization.permission-sets',
       'settings:authorization.permission-sets',
+      // 系统: notification management, its templates then its delivery
+      // logs (2026-11-10, as NocoCRM), scheduled tasks and the template's
+      // Database Explorer (beta.92).
+      'notification.templates',
+      'notification.logs',
       'scheduler.schedules',
-      'itam-settings',
+      'database-explorer',
     ]);
     // A detail page is not a menu entry and carries no grant of its own.
     expect(

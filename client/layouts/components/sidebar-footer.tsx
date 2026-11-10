@@ -20,8 +20,8 @@ import {
 } from '#components/ui/tooltip';
 
 /**
- * The application's sidebar footer: the NocoBase slogan's two lines, then the template's name and its version, each
- * on its own line. In icon mode only the shield remains, and a tooltip carries the same text.
+ * The application's sidebar footer: the NocoBase slogan's two lines, then the application's version.
+ * In icon mode only the shield remains, and a tooltip carries the same text.
  */
 export function AppSidebarFooter(): ReactElement {
   const { t } = useTranslation();
@@ -32,13 +32,13 @@ export function AppSidebarFooter(): ReactElement {
   const templateName = publicConfig.get('app.displayName', builtName);
   const templateVersion = publicConfig.get('app.version', builtVersion);
   const versionLabel = `v${templateVersion}`;
-  const buildFreely = t('shell.buildFreely', {
-    defaultValue: 'AI builds freely.',
-  });
   // The tooltip and the icon's accessible name have no link, so the brand's markup is dropped there.
-  const reliability = t('shell.reliability', {
-    defaultValue: '<brand>NocoBase</brand> keeps it reliable.',
+  const brandPartnership = t('shell.brandPartnership', {
+    defaultValue: 'AI + <brand>NocoBase</brand>',
   }).replace(/<\/?brand>/g, '');
+  const buildReliableSystems = t('shell.buildReliableSystems', {
+    defaultValue: 'Build reliable business systems',
+  });
 
   const brandLink = (
     <a
@@ -61,7 +61,7 @@ export function AppSidebarFooter(): ReactElement {
               <span
                 aria-label={
                   iconOnly
-                    ? `${buildFreely} ${reliability} ${templateName} ${versionLabel}`
+                    ? `${brandPartnership} ${buildReliableSystems} ${templateName} ${versionLabel}`
                     : undefined
                 }
                 className='flex h-5 shrink-0 items-center rounded-sm text-sidebar-foreground/80 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring'
@@ -77,8 +77,8 @@ export function AppSidebarFooter(): ReactElement {
             hidden={!iconOnly}
             side='right'
           >
-            <span className='font-medium'>{buildFreely}</span>
-            <span>{reliability}</span>
+            <span className='font-medium'>{brandPartnership}</span>
+            <span>{buildReliableSystems}</span>
             <span className='mt-1 opacity-70'>
               {templateName} {versionLabel}
             </span>
@@ -86,19 +86,24 @@ export function AppSidebarFooter(): ReactElement {
         </Tooltip>
         <div className='min-w-0 flex-1 group-data-[collapsible=icon]:hidden'>
           <p className='font-medium text-balance text-sidebar-foreground'>
-            {buildFreely}
-          </p>
-          <p className='text-balance text-muted-foreground'>
             <Trans
               t={t}
-              i18nKey='shell.reliability'
-              defaults='<brand>NocoBase</brand> keeps it reliable.'
+              i18nKey='shell.brandPartnership'
+              defaults='AI + <brand>NocoBase</brand>'
               components={{ brand: brandLink }}
             >
-              {brandLink} keeps it reliable.
+              AI + {brandLink}
             </Trans>
           </p>
-          <p className='mt-1 truncate text-muted-foreground'>
+          <p className='text-balance text-muted-foreground'>
+            {buildReliableSystems}
+          </p>
+          {/* Application change (ITAM): the application's name before its
+              version, as the template had it until beta.92. */}
+          <p
+            className='mt-1 truncate text-muted-foreground'
+            title={`${templateName} ${versionLabel}`}
+          >
             {templateName} {versionLabel}
           </p>
         </div>

@@ -24,6 +24,7 @@ const messages = {
   'files.retry': 'Повторить',
   'files.done': 'Готово',
   'files.uploading': 'Загрузка',
+  'files.longWait': 'Загрузка ещё идёт. Подождите или отмените.',
   'files.failed': 'Ошибка',
   'files.pending': 'В очереди',
   'files.previous': 'Предыдущий файл',

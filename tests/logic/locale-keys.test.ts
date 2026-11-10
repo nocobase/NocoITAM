@@ -60,6 +60,9 @@ describe('client locale keys', () => {
   const keys = new Set<string>();
   for (const file of files) {
     const source = readFileSync(file, 'utf8');
+    // A page translated in a plugin's own namespace, as the template's
+    // notification templates page is (beta.92), owns no application key.
+    if (/useTranslation\('@nocobase\/app-plugin-/.test(source)) continue;
     for (const match of source.matchAll(/\bt\(\s*'([a-zA-Z0-9_.-]+)'/g)) {
       // A key ending in a dot is a prefix concatenated at run time.
       if (!match[1]!.endsWith('.')) keys.add(match[1]!);

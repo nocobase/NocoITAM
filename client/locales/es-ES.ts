@@ -1,6 +1,7 @@
 import type { AppResource } from './en-US.js';
 import agentChatEsES from '../extensions/nocobase-agent-chat/locales/es-ES.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/es-ES.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/es-ES.js';
 import adminEsES from './admin/es-ES.js';
 import systemEsES from './system/es-ES.js';
 
@@ -9,6 +10,9 @@ const esES: AppResource = {
   ...agentChatEsES,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   admin: adminEsES,
 
   appearance: {
@@ -2684,10 +2688,24 @@ const esES: AppResource = {
   },
   settings: {
     ...systemEsES.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: 'Registros de notificaciones',
+    notificationManagementDescription:
+      'Sigue la entrega de las notificaciones y consulta las plantillas registradas con vistas previas de contenido sintético.',
+    itamModule: {
+      title: 'Configuración de la gestión de activos',
+      description:
+        'Numeración, recordatorios, sincronización de dispositivos, flujos de aprobación y recepción desde albaranes.',
+    },
+    apiKeysDescription:
+      'Claves que permiten a scripts e integraciones llamar a la API en su nombre.',
+    scheduledTasksDescription:
+      'Las tareas que se ejecutan según una programación, sus últimas ejecuciones y sus interruptores.',
     noRoleAccess:
       'Este usuario puede iniciar sesión y usar las funciones básicas de la cuenta. Los roles no conceden acceso a las operaciones.',
     noAssignedRoles: 'Sin roles asignados',
-    title: 'Configuración',
     deviceSyncRules: {
       title: 'Reglas de revisión',
       description:
@@ -2961,6 +2979,8 @@ const esES: AppResource = {
     },
     demo: {
       title: 'Datos de demostración',
+      cardDescription:
+        'Importe o restablezca los datos de demostración de la empresa ficticia.',
       description:
         'Una empresa ficticia, en chino o en inglés: dispositivos, existencias, licencias, compras, reparaciones, inventarios y bajas, con algunos problemas deliberados (préstamos vencidos, una licencia sobreasignada, una diferencia de inventario, una persona que ha salido y aún tiene un portátil), con fechas relativas al día de la importación. Al borrar se quita solo lo que creó la importación.',
       generate: 'Importar datos de demostración',
@@ -3680,8 +3700,6 @@ const esES: AppResource = {
   shell: {
     ...systemEsES.shell,
     workspace: 'Espacio de trabajo de aplicaciones con IA',
-    buildFreely: 'La IA construye con libertad.',
-    reliability: '<brand>NocoBase</brand> lo mantiene fiable.',
   },
   auth: {
     welcome: 'Bienvenido de nuevo',
@@ -3734,9 +3752,6 @@ const esES: AppResource = {
       'Datos fiables, control de acceso, flujos de trabajo y gobernanza.',
     foundation: 'Base de NocoBase',
     marketingFooter: 'Libertad arriba. Confianza abajo.',
-    marketingTitleFirst: 'Deje que la IA construya con libertad.',
-    marketingTitleSecond: 'NocoBase lo mantiene',
-    marketingTitleThird: 'fiable.',
     passwordMismatch: 'Las contraseñas no coinciden.',
   },
   status: {

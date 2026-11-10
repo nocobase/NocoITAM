@@ -1,6 +1,7 @@
 import type { AppResource } from './en-US.js';
 import agentChatRuRU from '../extensions/nocobase-agent-chat/locales/ru-RU.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/ru-RU.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/ru-RU.js';
 import adminRuRU from './admin/ru-RU.js';
 import systemRuRU from './system/ru-RU.js';
 
@@ -9,6 +10,9 @@ const ruRU: AppResource = {
   ...agentChatRuRU,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   admin: adminRuRU,
 
   appearance: {
@@ -2811,10 +2815,24 @@ const ruRU: AppResource = {
   },
   settings: {
     ...systemRuRU.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: 'Журнал уведомлений',
+    notificationManagementDescription:
+      'Отслеживание отправки уведомлений, просмотр зарегистрированных шаблонов и синтетических предпросмотров содержимого.',
+    itamModule: {
+      title: 'Настройки управления активами',
+      description:
+        'Правила нумерации, пороги напоминаний, синхронизация устройств, процессы согласования и приёмка по накладным.',
+    },
+    apiKeysDescription:
+      'Ключи, с которыми скрипты и интеграции вызывают API от вашего имени.',
+    scheduledTasksDescription:
+      'Задачи, выполняемые по расписанию, их последние запуски и переключатели.',
     noRoleAccess:
       'Этот пользователь по-прежнему может входить в систему и пользоваться основными функциями учётной записи. Роли не дают доступа к бизнес-данным.',
     noAssignedRoles: 'Роли не назначены',
-    title: 'Настройки',
     deviceSyncRules: {
       title: 'Правила сверки',
       description: 'Когда показывать расхождение между MDM и реестром',
@@ -3096,6 +3114,7 @@ const ruRU: AppResource = {
     },
     demo: {
       title: 'Демо-данные',
+      cardDescription: 'Импорт или сброс демо-данных вымышленной компании.',
       description:
         'Вымышленная компания на китайском или английском языке: устройства, запасы, лицензии, закупки, ремонты, инвентаризации и списания с несколькими намеренными проблемами (просроченные выдачи, лицензия с перерасходом мест, расхождение при инвентаризации, увольняющийся сотрудник, у которого остался ноутбук). Даты отсчитываются от дня импорта. Очистка удаляет только то, что создал импорт.',
       generate: 'Импортировать демо-данные',
@@ -3819,8 +3838,6 @@ const ruRU: AppResource = {
   shell: {
     ...systemRuRU.shell,
     workspace: 'Рабочее пространство ИИ-приложений',
-    buildFreely: 'ИИ создаёт свободно.',
-    reliability: '<brand>NocoBase</brand> обеспечивает надёжность.',
   },
   auth: {
     welcome: 'С возвращением',
@@ -3871,9 +3888,6 @@ const ruRU: AppResource = {
       'Надёжные данные, контроль доступа, бизнес-процессы и управление.',
     foundation: 'Основа NocoBase',
     marketingFooter: 'Свобода сверху. Уверенность в основе.',
-    marketingTitleFirst: 'Пусть ИИ создаёт свободно.',
-    marketingTitleSecond: 'NocoBase обеспечит',
-    marketingTitleThird: 'надёжность.',
     passwordMismatch: 'Пароли не совпадают.',
   },
   status: {

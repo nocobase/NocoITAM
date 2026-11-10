@@ -1,4 +1,3 @@
-import { screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import enUS from '../../client/locales/en-US.js';
 
@@ -10,19 +9,11 @@ afterEach(() => {
 });
 
 it.each([true, false, undefined])(
-  'keeps the demo route and tab aligned for an unrestricted user (enabled: %s)',
+  'keeps the demo route and its settings card aligned (enabled: %s)',
   async (enabled) => {
     vi.resetModules();
-    const [client, plugins, authorization, fixture] = await Promise.all([
-      import('@nocobase/app-client'),
-      import('@nocobase/app-client/plugins'),
-      import('@nocobase/app-plugin-authorization/client'),
-      import('@nocobase/app-testing/client'),
-    ]);
-    const { apiClientToken } = client;
+    const plugins = await import('@nocobase/app-client/plugins');
     const { resolveAppClientContributions } = plugins;
-    const { AuthorizationClient, authorizationClientToken } = authorization;
-    const { answerApi, renderWithApp } = fixture;
     document.getElementById('nocobase-runtime-config')!.textContent =
       JSON.stringify({
         version: 1,
@@ -58,27 +49,17 @@ it.each([true, false, undefined])(
         ),
       ).toBe(false);
     }
-    const { default: SettingsPage } =
-      await import('../../client/pages/settings/index.js');
-    await renderWithApp(<SettingsPage />, {
-      route: '/settings/itam',
-      namespace: 'itam',
-      namespaces: { itam: enUS },
-      fetch: answerApi(({ path }) =>
-        path === 'authorization/permissions'
-          ? { data: { unrestricted: true, permissions: [] } }
-          : new Response(null, { status: 404 }),
-      ),
-      services: (app) =>
-        app.container.singleton(
-          authorizationClientToken,
-          (resolver) =>
-            new AuthorizationClient(resolver.resolve(apiClientToken)),
-        ),
-    });
-    await screen.findByRole('tab', { name: enUS.navigation.settingsGeneral });
+    // The demo data's card sits in 业务配置 on the settings home (template
+    // 1.0.0-beta.92, 2026-11-10), its route the one checked above either way.
+    const { buildSettingsCatalog } =
+      await import('../../client/routing/route-navigation.js');
+    const business = buildSettingsCatalog(resolved.routes, new Set()).find(
+      ({ route }) => route.name === 'settingsBusiness',
+    );
     expect(
-      await screen.findByRole('tab', { name: enUS.settings.demo.title }),
-    ).toBeVisible();
+      business?.modules.find(({ target }) => target.path === '/settings/demo')
+        ?.route.navigation?.title,
+    ).toBe('settings.demo.title');
+    expect(enUS.settings.demo.title).toBeTruthy();
   },
 );

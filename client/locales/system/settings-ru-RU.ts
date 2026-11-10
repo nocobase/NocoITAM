@@ -4,6 +4,10 @@ import type settingsEnUS from './settings-en-US.js';
 // The template's Settings copy (client/locales/system/settings-en-US.ts): the
 // prepared Users and Roles pages and the permission editor, in ru-RU.
 const settings: LocaleResource<typeof settingsEnUS> = {
+  notificationManagementDescription:
+    'Просмотр зарегистрированных шаблонов уведомлений и предпросмотра с синтетическим содержимым.',
+  notificationTemplates: 'Шаблоны уведомлений',
+  notificationManagement: 'Управление уведомлениями',
   listChanged: 'Список изменился. Повторите попытку.',
   setup: {
     title: 'Предварительные условия',
@@ -118,6 +122,19 @@ const settings: LocaleResource<typeof settingsEnUS> = {
 
   reload: 'Перезагрузить роль',
   title: 'Системные настройки',
+  home: {
+    description:
+      'Учётные записи, разрешения, бизнес-настройки и системные возможности — всё здесь.',
+    empty: 'Доступных вам настроек пока нет.',
+  },
+  categories: {
+    account: 'Учётные записи и разрешения',
+    business: 'Бизнес-настройки',
+    ai: 'ИИ',
+    system: 'Система',
+  },
+  permissionManagementDescription:
+    'Определите, что каждая роль может открывать и делать и какие данные ей видны.',
   users: 'Пользователи',
   roles: 'Роли и разрешения',
   usersDescription:

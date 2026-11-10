@@ -36,16 +36,25 @@ The layout is the template's shadcn sidebar (`AppSidebar`, `NavigationMenu`)
 with two application changes: a menu group reads as a heading with its pages
 always listed (`sections` on `NavigationMenu`), and the search button sits
 beside the logo (`AppSidebar`'s `action`), falling back to an entry under
-待办 (`after`) when the sidebar is collapsed. 设置 is one menu entry opening one page of tabs (2026-10-16, after
-NocoCRM's; `client/pages/settings/index.tsx`): ITAM's own settings (通用,
-MDM, 按送货单入库 and, last, 演示数据, in `client/pages/itam/settings/`) and
-the administration pages in `client/pages/settings/`, each tab its own child
-route at `/settings/<tab>` checking its own grant and shown only to whoever it
-lets in: NocoBase 3's prepared Users and Roles pages with the template's
-permission editor (2026-10-24, worded by `client/locales/system/settings-*.ts`;
-ITAM's additions in `accounts/`), and ITAM's own API keys and scheduled tasks
-pages, built on the plugins' client APIs and worded through `admin.*`
-(`client/locales/admin/index.ts`); see [pages and interface
+待办 (`after`) when the sidebar is collapsed. 设置 is the template's settings shell (template 1.0.0-beta.92,
+2026-11-10; one page of ITAM's own tabs from 2026-10-16): one menu entry
+opening a home of cards by category (`client/pages/settings/shell-routes.ts`,
+`settings-home.tsx`), each card a module, a module of several views showing
+them as tabs (`SettingsModulePage`). ITAM's settings are registered in
+`settingsRoutes` in `client/routes.ts`: 业务配置, first on the home (its
+order changed in `shell-routes.ts`), holds 资产管理设置, ITAM's four
+configuration pages as one module's tabs (通用, MDM, 流程, 按送货单入库, in
+`client/pages/itam/settings/`), and 演示数据 (`client/lib/itam/demo-routes.ts`);
+账号与权限 NocoBase 3's prepared Users and
+Roles pages with the template's permission editor (2026-10-24, worded by
+`client/locales/system/settings-*.ts`; ITAM's additions in `accounts/`) and
+ITAM's own API keys page; 系统 notification management (its templates
+and delivery logs, see [the shell](shell.md)), scheduled tasks and the
+template's Database Explorer and Foundation's 功能与扩展. Moving them in changed only their
+place: each keeps its route name, its `/settings/...` address and its grant,
+and a card shows only to whoever its grant lets in. ITAM's API keys and
+scheduled tasks pages are built on the plugins' client APIs and worded
+through `admin.*` (`client/locales/admin/index.ts`); see [pages and interface
 conventions](itam-ui.md). AI is a section too, holding the Agents
 plugin's own pages; its model services page is at `/ai-models`, since
 `/models` is the asset models page.

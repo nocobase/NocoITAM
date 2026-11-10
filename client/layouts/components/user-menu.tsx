@@ -1,5 +1,5 @@
 import { useAuthenticationErrorResolver } from '@nocobase/app-plugin-authentication/client/actions';
-import { useToaster } from '@nocobase/app-client';
+import { getAvatarInitials, useToaster } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useAuthentication } from '@nocobase/app-plugin-authentication/client';
 import { LogOut, UserRound } from 'lucide-react';
@@ -13,8 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '#components/ui/dropdown-menu';
 
+import { ThemeSettings } from '../../theme/index.js';
 import { LanguageSwitcher } from './language-switcher.js';
-import { ThemeMenu } from './theme-menu.js';
 
 export function UserMenu(): ReactElement {
   const {
@@ -40,7 +40,9 @@ export function UserMenu(): ReactElement {
     identity?.fullName ||
     identity?.email ||
     t('account.fallback', { defaultValue: 'Account' });
-  const initials = getInitials(name);
+  const initials = getAvatarInitials(name, {
+    cjk: Boolean(identity?.fullName),
+  });
 
   return (
     <DropdownMenu>
@@ -75,9 +77,7 @@ export function UserMenu(): ReactElement {
         </div>
         <DropdownMenuSeparator />
         <LanguageSwitcher />
-        {/* Application change (ITAM, 2026-11-03): 外观 here, not in the
-            header. */}
-        <ThemeMenu />
+        <ThemeSettings />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={isLoggingOut}
@@ -123,15 +123,4 @@ export function UserMenu(): ReactElement {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-function getInitials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) {
-    return '?';
-  }
-  return words
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? '')
-    .join('');
 }

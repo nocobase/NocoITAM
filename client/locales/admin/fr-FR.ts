@@ -318,6 +318,126 @@ const adminFrFR: AdminResource = {
       triggered: 'Déclenchée',
     },
   },
+  notificationTemplates: {
+    intro:
+      'Notifications que le système envoie de lui-même : quand chacune est envoyée, qui la reçoit et ce qu’elle dit dans chaque langue. Rien ne peut être modifié ici.',
+    search: 'Rechercher',
+    searchPlaceholder: 'Nom ou description',
+    category: 'Catégorie',
+    channel: 'Canal',
+    all: 'Toutes',
+    empty: "Aucune notification n'est enregistrée.",
+    whatOne: 'ce modèle de notification',
+    when: 'Quand elle est envoyée',
+    who: 'Qui la reçoit',
+    conditions: 'Conditions',
+    language: 'Langue',
+    source: 'Fourni par',
+    channels: 'Canaux',
+    channelsHint:
+      'Configuré et activé ne garantit pas que la connexion fonctionne.',
+    channelState: {
+      configured: 'Configuré',
+      unconfigured: 'Non configuré',
+      enabled: 'Activé',
+      disabled: 'Désactivé',
+      unknown: 'Inconnu',
+    },
+    variables: 'Variables',
+    preview: 'Aperçu',
+    previewLanguage: "Langue de l'aperçu",
+    previewAllLanguages:
+      'Cet e-mail contient toutes les langues à la fois ; chaque destinataire reçoit le même message.',
+    example: 'Exemple',
+    definition: 'Modèle',
+    synthetic:
+      "Données d'exemple fictives. L'aperçu n'envoie rien et ne modifie rien.",
+    html: 'Version HTML',
+    channelTypes: {
+      'in-app': "Dans l'application",
+      email: 'E-mail',
+    },
+    contributors: {
+      itam: 'NocoITAM',
+      users: 'Utilisateurs',
+    },
+    categories: {
+      accounts: 'Comptes',
+      devices: 'Appareils',
+      people: 'Personnes',
+      comments: 'Commentaires',
+    },
+    always:
+      'Jamais envoyée à la personne dont l’action l’a déclenchée, et chaque destinataire ne la reçoit qu’une fois.',
+    itamLanguage:
+      'Dans la langue par défaut de l’application, quelle que soit la langue d’interface du destinataire ; le texte d’un commentaire apparaît tel qu’il a été écrit.',
+    items: {
+      loanOverdue: {
+        name: 'Prêt en retard',
+        trigger:
+          'La vérification nocturne trouve un appareil prêté dont la date de retour prévue est dépassée.',
+        recipients: 'Le responsable de l’appareil.',
+        rule: 'Une fois par appareil et par date de retour prévue ; un prêt qui reste en retard n’est pas signalé à nouveau.',
+        variables: {
+          deviceNo: 'Le numéro de l’appareil.',
+          date: 'La date de retour prévue.',
+        },
+      },
+      leaverRecovery: {
+        name: 'Récupération au départ',
+        trigger:
+          'La tâche nocturne prépare la récupération pour une personne marquée comme partie qui détient encore des appareils, du stock ou des licences.',
+        recipients:
+          'Chaque responsable d’une partie de ces biens, informé de sa seule part.',
+        rule: 'Une fois par personne partie et par responsable.',
+        variables: {
+          name: 'Le nom de la personne partie.',
+          count: 'Combien de ses biens le destinataire doit régler.',
+        },
+      },
+      commentMentioned: {
+        name: 'Mentionné dans un commentaire',
+        trigger:
+          'Un commentaire sur un enregistrement mentionne un collègue avec @.',
+        recipients: 'Chaque collègue mentionné.',
+        rule: 'Une fois par commentaire et par personne.',
+        variables: {
+          actor: 'L’auteur du commentaire.',
+          title: 'L’enregistrement commenté.',
+          text: 'Le commentaire, abrégé, dans les mots de son auteur.',
+        },
+      },
+      commentReplied: {
+        name: 'Réponse dans un fil de commentaires',
+        trigger:
+          'Quelqu’un commente un enregistrement que d’autres ont déjà commenté.',
+        recipients:
+          'Toutes les personnes ayant écrit dans le fil ; celles que la réponse mentionne avec @ sont plutôt prévenues de la mention.',
+        rule: 'Une fois par commentaire et par personne.',
+        variables: {
+          actor: 'L’auteur du commentaire.',
+          title: 'L’enregistrement commenté.',
+          text: 'Le commentaire, abrégé, dans les mots de son auteur.',
+        },
+      },
+      usersInvitation: {
+        name: "Invitation d'utilisateur",
+        trigger:
+          "Un administrateur invite quelqu'un, ou renvoie une invitation, en choisissant l'envoi par e-mail.",
+        recipients: "L'adresse e-mail de la personne invitée.",
+        rule: 'Envoyée avec chaque invitation envoyée par e-mail ; aucun interrupteur ne permet de la désactiver.',
+        language:
+          "Un seul e-mail dans toutes les langues prises en charge, avec l'objet en anglais ; la langue de l'aperçu n'y change rien.",
+        variables: {
+          app: "Le nom de l'application.",
+          inviter: "La personne qui a envoyé l'invitation.",
+          items: 'Les rôles ou accès accordés.',
+          date: "La date d'expiration de l'invitation.",
+          url: "Le lien d'invitation à usage unique ; l'aperçu en utilise un fictif.",
+        },
+      },
+    },
+  },
 };
 
 export default adminFrFR;

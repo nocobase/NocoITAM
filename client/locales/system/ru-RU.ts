@@ -5,6 +5,126 @@ import inboxRuRU from '#extensions/nocobase-inbox/locales/ru-RU';
 
 /** The Russian copy of what the template ships; see `./en-US.ts`. */
 const systemRuRU: SystemResource = {
+  databaseExplorer: {
+    title: 'Обозреватель баз данных',
+    description:
+      'Просмотр подключений к базам данных, таблиц и полей приложения.',
+    connection: 'Подключение',
+    chooseConnection: 'Выберите подключение',
+    defaultConnection: 'По умолчанию',
+    schemaManagement: {
+      managed: 'Управляется приложением',
+      external: 'Управляется извне',
+    },
+    tables: 'Таблицы',
+    tablesIn: 'Таблицы в {{connection}}',
+    searchTables: 'Поиск по имени или заголовку таблицы',
+    clearSearch: 'Очистить поиск',
+    tableCount_one: '{{count}} таблица',
+    tableCount_few: '{{count}} таблицы',
+    tableCount_many: '{{count}} таблиц',
+    tableCount_other: '{{count}} таблицы',
+    tablesMatched_one: 'Совпадений: {{count}} из {{total}}',
+    tablesMatched_few: 'Совпадений: {{count}} из {{total}}',
+    tablesMatched_many: 'Совпадений: {{count}} из {{total}}',
+    tablesMatched_other: 'Совпадений: {{count}} из {{total}}',
+    loadingTables_one: 'Загрузка таблиц… прочитано: {{count}}',
+    loadingTables_few: 'Загрузка таблиц… прочитано: {{count}}',
+    loadingTables_many: 'Загрузка таблиц… прочитано: {{count}}',
+    loadingTables_other: 'Загрузка таблиц… прочитано: {{count}}',
+    truncated_one:
+      'Показана только первая {{count}} таблица; поиск охватывает только её.',
+    truncated_few:
+      'Показаны только первые {{count}} таблицы; поиск охватывает только эти таблицы.',
+    truncated_many:
+      'Показаны только первые {{count}} таблиц; поиск охватывает только эти таблицы.',
+    truncated_other:
+      'Показаны только первые {{count}} таблицы; поиск охватывает только эти таблицы.',
+    partial_one:
+      'Загрузка прервана после {{count}} таблицы; поиск охватывает только загруженные таблицы.',
+    partial_few:
+      'Загрузка прервана после {{count}} таблиц; поиск охватывает только загруженные таблицы.',
+    partial_many:
+      'Загрузка прервана после {{count}} таблиц; поиск охватывает только загруженные таблицы.',
+    partial_other:
+      'Загрузка прервана после {{count}} таблицы; поиск охватывает только загруженные таблицы.',
+    selectedHidden: 'Открытая таблица «{{table}}» не соответствует поиску.',
+    kind: {
+      table: 'Таблица',
+      view: 'Представление',
+      materializedView: 'Материализованное представление',
+    },
+    kindLabel: 'Вид',
+    collectionName: 'Имя',
+    tableName: 'Таблица',
+    schema: 'Схема',
+    fields: 'Поля',
+    fieldsOf: 'Поля таблицы {{table}}',
+    searchFields: 'Поиск по имени, заголовку или типу поля',
+    fieldCount_one: '{{count}} поле',
+    fieldCount_few: '{{count}} поля',
+    fieldCount_many: '{{count}} полей',
+    fieldCount_other: '{{count}} поля',
+    fieldsMatched_one: 'Совпадений: {{count}} из {{total}}',
+    fieldsMatched_few: 'Совпадений: {{count}} из {{total}}',
+    fieldsMatched_many: 'Совпадений: {{count}} из {{total}}',
+    fieldsMatched_other: 'Совпадений: {{count}} из {{total}}',
+    column: {
+      field: 'Поле',
+      type: 'Тип',
+      nullable: 'Допускает NULL',
+      references: 'Ссылается на',
+    },
+    primaryKey: 'Первичный ключ',
+    yes: 'Да',
+    no: 'Нет',
+    notReported: 'Не указано',
+    notApplicable: 'Неприменимо',
+    relationNullable: 'Связь, а не столбец',
+    nullableTag: {
+      yes: 'Допускает NULL',
+      no: 'Не допускает NULL',
+      unknown: 'Допустимость NULL не указана',
+    },
+    none: 'Нет',
+    warnings_one: '{{count}} замечание проверки',
+    warnings_few: '{{count}} замечания проверки',
+    warnings_many: '{{count}} замечаний проверки',
+    warnings_other: '{{count}} замечания проверки',
+    warningDescription: 'Некоторые сведения могут быть неполными.',
+    backToTables: 'Все таблицы',
+    selectTable: 'Выберите таблицу, чтобы увидеть её поля.',
+    loading: 'Загрузка',
+    signIn: 'Войти',
+    retry: 'Повторить',
+    notice: {
+      unauthenticated: 'Сеанс истёк',
+      forbidden: 'У вас нет разрешения на просмотр баз данных',
+      connectionNotFound: 'Такого подключения не существует',
+      tableNotFound: 'В этом подключении нет такой таблицы',
+      unavailable: 'База данных сейчас недоступна',
+      failed: 'Не удалось загрузить сведения о базе данных',
+      noConnections: 'Подключения к базам данных не настроены',
+      noTables: 'В этом подключении нет таблиц',
+      noFields: 'В этой таблице нет полей',
+      noResults: 'Ничего не найдено',
+    },
+  },
+  pendingFeedback: {
+    working: 'Выполняется…',
+    longWait:
+      'Это занимает больше времени, чем обычно. Можно продолжить ожидание.',
+  },
+  taskProgress: {
+    queued: 'Ожидает запуска',
+    running: 'Выполняется',
+    completed: 'Завершено',
+    failed: 'Ошибка',
+    canceled: 'Отменено',
+    count: '{{processed}} из {{total}}',
+    processed: 'Обработано: {{processed}}',
+    background: 'Задача продолжит выполняться, если вы покинете эту страницу.',
+  },
   listFeedback: {
     loading: 'Загрузка',
     empty: 'Данных пока нет',
@@ -76,6 +196,9 @@ const systemRuRU: SystemResource = {
     'Войдите, указав имя пользователя или адрес электронной почты и пароль.',
   'auth.registerTitle': 'Создание учётной записи',
   'auth.registerDescription': 'Создайте учётную запись, чтобы начать работу.',
+  'auth.registrationAccepted': 'Запрос на регистрацию отправлен',
+  'auth.registrationGuidance':
+    'Попробуйте войти с указанными именем пользователя и паролем. Если для этого адреса эл. почты уже есть учётная запись, новые данные не вступят в силу. Войдите с исходной учётной записью или восстановите пароль. Перед входом выполните инструкции по подтверждению, если приложение их предоставило.',
   'auth.forgotTitle': 'Восстановление пароля',
   'auth.forgotDescription':
     'Введите адрес электронной почты. Если учётная запись существует, мы отправим ссылку для сброса пароля.',
@@ -120,9 +243,8 @@ const systemRuRU: SystemResource = {
   'auth.continueWith': 'Продолжить с {provider}',
   'auth.about': 'О приложении',
   'auth.platform': 'ИИ-нативная платформа приложений',
-  'auth.marketingTitleFirst': 'ИИ строит свободно.',
-  'auth.marketingTitleSecond': 'NocoBase обеспечивает',
-  'auth.marketingTitleThird': 'надёжность.',
+  'auth.marketingTitleFirst': 'AI + NocoBase',
+  'auth.marketingTitleSecond': 'Build reliable business systems',
   'auth.marketingDescription':
     'ИИ получает гибкий фронтенд-фреймворк, чтобы создавать любой интерфейс, а NocoBase защищает данные, права доступа и управление под ним.',
   'auth.frontend': 'ИИ-нативный фронтенд',
@@ -133,10 +255,14 @@ const systemRuRU: SystemResource = {
     'Надёжные данные, контроль доступа и управление.',
   'auth.marketingFooter': 'Свобода сверху. Уверенность в основе.',
   'status.loading': 'Загрузка',
+  'status.refreshing': 'Обновление',
   'status.loadingPage': 'Загрузка страницы',
   'status.denied': 'Доступ запрещён',
   'status.pageFailed': 'Не удалось загрузить страницу',
   'status.retry': 'Повторить',
+  'status.reloadPage': 'Перезагрузить страницу',
+  'status.retryFailedDescription':
+    'Загрузить по-прежнему не удаётся. Может помочь перезагрузка всей страницы; несохранённые изменения на этой странице могут быть потеряны.',
   'navigation.brandHome': 'Главная NocoBase',
   'navigation.brandApps': 'Приложения NocoBase',
   'routeOverlay.close': 'Закрыть',
@@ -144,8 +270,8 @@ const systemRuRU: SystemResource = {
   'status.routeFailedDescription':
     'Не удалось загрузить маршрут {{label}} из {{packageName}}.',
   shell: {
-    buildFreely: 'ИИ строит свободно.',
-    reliability: '<brand>NocoBase</brand> обеспечивает надёжность.',
+    brandPartnership: 'AI + <brand>NocoBase</brand>',
+    buildReliableSystems: 'Build reliable business systems',
   },
   home: {
     platform: 'NocoBase · ИИ-нативная платформа приложений',
@@ -359,7 +485,7 @@ const systemRuRU: SystemResource = {
   },
 
   appearance: {
-    title: 'Оформление',
+    title: 'Тема',
     mode: 'Цветовой режим',
     preset: 'Тема',
     light: 'Светлая',
@@ -390,6 +516,7 @@ const systemRuRU: SystemResource = {
     signingOut: 'Выполняется выход…',
   },
   navigation: {
+    resources: 'Ресурсы',
     home: 'Главная',
     open: 'Открыть навигацию',
     close: 'Закрыть навигацию',
@@ -401,6 +528,7 @@ const systemRuRU: SystemResource = {
     breadcrumb: 'Навигационная цепочка',
     breadcrumbMore: 'Показать промежуточные уровни',
     back: 'Назад',
+    backTo: 'Назад: {{label}}',
   },
   dataTable: {
     noResults: 'Нет результатов',
@@ -420,6 +548,7 @@ const systemRuRU: SystemResource = {
   datePicker: {
     placeholder: 'Выберите дату',
     rangePlaceholder: 'Выберите период',
+    clear: 'Очистить',
   },
 };
 

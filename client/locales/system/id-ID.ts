@@ -5,6 +5,106 @@ import inboxIdID from '#extensions/nocobase-inbox/locales/id-ID';
 
 /** The Indonesian copy of what the template ships; see `./en-US.ts`. */
 const systemIdID: SystemResource = {
+  databaseExplorer: {
+    title: 'Penjelajah basis data',
+    description: 'Telusuri koneksi basis data, tabel, dan kolom aplikasi.',
+    connection: 'Koneksi',
+    chooseConnection: 'Pilih koneksi',
+    defaultConnection: 'Bawaan',
+    schemaManagement: {
+      managed: 'Dikelola oleh aplikasi',
+      external: 'Dikelola secara eksternal',
+    },
+    tables: 'Tabel',
+    tablesIn: 'Tabel di {{connection}}',
+    searchTables: 'Cari berdasarkan nama atau judul tabel',
+    clearSearch: 'Hapus pencarian',
+    tableCount_one: '{{count}} tabel',
+    tableCount_other: '{{count}} tabel',
+    tablesMatched_one: '{{count}} dari {{total}} tabel cocok',
+    tablesMatched_other: '{{count}} dari {{total}} tabel cocok',
+    loadingTables_one: 'Memuat tabel… {{count}} sudah dibaca',
+    loadingTables_other: 'Memuat tabel… {{count}} sudah dibaca',
+    truncated_one:
+      'Hanya {{count}} tabel pertama yang ditampilkan; pencarian hanya mencakup tabel tersebut.',
+    truncated_other:
+      'Hanya {{count}} tabel pertama yang ditampilkan; pencarian hanya mencakup tabel-tabel tersebut.',
+    partial_one:
+      'Pemuatan berhenti setelah {{count}} tabel; pencarian hanya mencakup tabel yang sudah dimuat.',
+    partial_other:
+      'Pemuatan berhenti setelah {{count}} tabel; pencarian hanya mencakup tabel yang sudah dimuat.',
+    selectedHidden:
+      'Tabel yang sedang dibuka, “{{table}}”, tidak cocok dengan pencarian.',
+    kind: {
+      table: 'Tabel',
+      view: 'View',
+      materializedView: 'Materialized view',
+    },
+    kindLabel: 'Jenis',
+    collectionName: 'Nama',
+    tableName: 'Tabel',
+    schema: 'Skema',
+    fields: 'Kolom',
+    fieldsOf: 'Kolom {{table}}',
+    searchFields: 'Cari berdasarkan nama, judul, atau tipe kolom',
+    fieldCount_one: '{{count}} kolom',
+    fieldCount_other: '{{count}} kolom',
+    fieldsMatched_one: '{{count}} dari {{total}} kolom cocok',
+    fieldsMatched_other: '{{count}} dari {{total}} kolom cocok',
+    column: {
+      field: 'Kolom',
+      type: 'Tipe',
+      nullable: 'Boleh kosong',
+      references: 'Referensi',
+    },
+    primaryKey: 'Kunci primer',
+    yes: 'Ya',
+    no: 'Tidak',
+    notReported: 'Tidak dilaporkan',
+    notApplicable: 'Tidak berlaku',
+    relationNullable: 'Relasi, bukan kolom basis data',
+    nullableTag: {
+      yes: 'Boleh kosong',
+      no: 'Tidak boleh kosong',
+      unknown: 'Boleh kosong atau tidak, tidak dilaporkan',
+    },
+    none: 'Tidak ada',
+    warnings_one: '{{count}} catatan pemeriksaan',
+    warnings_other: '{{count}} catatan pemeriksaan',
+    warningDescription: 'Beberapa detail mungkin tidak lengkap.',
+    backToTables: 'Semua tabel',
+    selectTable: 'Pilih tabel untuk melihat kolomnya.',
+    loading: 'Memuat',
+    signIn: 'Masuk',
+    retry: 'Coba lagi',
+    notice: {
+      unauthenticated: 'Sesi berakhir',
+      forbidden: 'Anda tidak memiliki izin untuk menelusuri basis data',
+      connectionNotFound: 'Koneksi ini tidak ada',
+      tableNotFound: 'Tabel ini tidak ada pada koneksi tersebut',
+      unavailable: 'Basis data sedang tidak tersedia',
+      failed: 'Tidak dapat memuat informasi basis data',
+      noConnections: 'Belum ada koneksi basis data yang dikonfigurasi',
+      noTables: 'Koneksi ini tidak memiliki tabel',
+      noFields: 'Tabel ini tidak memiliki kolom',
+      noResults: 'Tidak ada hasil',
+    },
+  },
+  pendingFeedback: {
+    working: 'Memproses…',
+    longWait:
+      'Ini memakan waktu lebih lama dari biasanya. Anda dapat terus menunggu.',
+  },
+  taskProgress: {
+    queued: 'Menunggu dimulai',
+    running: 'Sedang berjalan',
+    completed: 'Selesai',
+    failed: 'Gagal',
+    canceled: 'Dibatalkan',
+    count: '{{processed}} dari {{total}}',
+    processed: '{{processed}} diproses',
+    background: 'Tugas tetap berjalan meskipun Anda meninggalkan halaman ini.',
+  },
   listFeedback: {
     loading: 'Memuat',
     empty: 'Belum ada data',
@@ -77,6 +177,9 @@ const systemIdID: SystemResource = {
     'Masuk dengan nama pengguna atau email dan kata sandi Anda.',
   'auth.registerTitle': 'Buat akun',
   'auth.registerDescription': 'Buat akun untuk memulai.',
+  'auth.registrationAccepted': 'Permintaan pendaftaran terkirim',
+  'auth.registrationGuidance':
+    'Coba masuk dengan nama pengguna dan kata sandi yang Anda kirimkan. Jika email ini sudah memiliki akun, detail baru tidak akan berlaku. Masuk dengan akun asli Anda atau pulihkan kata sandi. Sebelum masuk, ikuti petunjuk verifikasi dari aplikasi jika ada.',
   'auth.forgotTitle': 'Lupa kata sandi',
   'auth.forgotDescription':
     'Masukkan email Anda dan kami akan mengirim tautan atur ulang jika akunnya ada.',
@@ -120,9 +223,8 @@ const systemIdID: SystemResource = {
   'auth.continueWith': 'Lanjutkan dengan {provider}',
   'auth.about': 'Tentang aplikasi ini',
   'auth.platform': 'Platform aplikasi berbasis AI',
-  'auth.marketingTitleFirst': 'Biarkan AI membangun dengan bebas.',
-  'auth.marketingTitleSecond': 'NocoBase menjaganya',
-  'auth.marketingTitleThird': 'tetap andal.',
+  'auth.marketingTitleFirst': 'AI + NocoBase',
+  'auth.marketingTitleSecond': 'Build reliable business systems',
   'auth.marketingDescription':
     'Berikan AI kerangka frontend yang fleksibel untuk membentuk setiap pengalaman, sementara NocoBase mengamankan data, izin, dan tata kelola di bawahnya.',
   'auth.frontend': 'Frontend berbasis AI',
@@ -133,10 +235,14 @@ const systemIdID: SystemResource = {
     'Data, kontrol akses, dan tata kelola yang andal.',
   'auth.marketingFooter': 'Bebas di atas. Tenang di bawah.',
   'status.loading': 'Memuat',
+  'status.refreshing': 'Memperbarui',
   'status.loadingPage': 'Memuat halaman',
   'status.denied': 'Akses ditolak',
   'status.pageFailed': 'Tidak dapat memuat halaman',
   'status.retry': 'Coba lagi',
+  'status.reloadPage': 'Muat ulang halaman',
+  'status.retryFailedDescription':
+    'Masih tidak dapat dimuat. Memuat ulang seluruh halaman mungkin membantu; perubahan yang belum disimpan di halaman ini bisa hilang.',
   'navigation.brandHome': 'Beranda NocoBase',
   'navigation.brandApps': 'Aplikasi NocoBase',
   'routeOverlay.close': 'Tutup',
@@ -145,8 +251,8 @@ const systemIdID: SystemResource = {
   'status.routeFailedDescription':
     'Rute {{label}} dari {{packageName}} tidak dapat dimuat.',
   shell: {
-    buildFreely: 'AI membangun dengan bebas.',
-    reliability: '<brand>NocoBase</brand> menjaganya tetap andal.',
+    brandPartnership: 'AI + <brand>NocoBase</brand>',
+    buildReliableSystems: 'Build reliable business systems',
   },
   home: {
     platform: 'NocoBase · Platform aplikasi berbasis AI',
@@ -360,7 +466,7 @@ const systemIdID: SystemResource = {
   },
 
   appearance: {
-    title: 'Tampilan',
+    title: 'Tema',
     mode: 'Mode warna',
     preset: 'Tema',
     light: 'Terang',
@@ -392,6 +498,7 @@ const systemIdID: SystemResource = {
     signingOut: 'Sedang keluar…',
   },
   navigation: {
+    resources: 'Sumber daya',
     home: 'Beranda',
     open: 'Buka navigasi',
     close: 'Tutup navigasi',
@@ -403,6 +510,7 @@ const systemIdID: SystemResource = {
     breadcrumb: 'Jejak navigasi',
     breadcrumbMore: 'Tampilkan tingkat di antaranya',
     back: 'Kembali',
+    backTo: 'Kembali ke {{label}}',
   },
   dataTable: {
     noResults: 'Tidak ada hasil',
@@ -422,6 +530,7 @@ const systemIdID: SystemResource = {
   datePicker: {
     placeholder: 'Pilih tanggal',
     rangePlaceholder: 'Pilih rentang tanggal',
+    clear: 'Hapus',
   },
 };
 

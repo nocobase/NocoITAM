@@ -5,6 +5,106 @@ import inboxPtBR from '#extensions/nocobase-inbox/locales/pt-BR';
 
 /** The Brazilian Portuguese copy of what the template ships; see `./en-US.ts`. */
 const systemPtBR: SystemResource = {
+  databaseExplorer: {
+    title: 'Explorador de banco de dados',
+    description:
+      'Navegue pelas conexões de banco de dados, tabelas e campos do aplicativo.',
+    connection: 'Conexão',
+    chooseConnection: 'Escolha uma conexão',
+    defaultConnection: 'Padrão',
+    schemaManagement: {
+      managed: 'Gerenciado pelo aplicativo',
+      external: 'Gerenciado externamente',
+    },
+    tables: 'Tabelas',
+    tablesIn: 'Tabelas em {{connection}}',
+    searchTables: 'Pesquisar por nome ou título da tabela',
+    clearSearch: 'Limpar pesquisa',
+    tableCount_one: '{{count}} tabela',
+    tableCount_other: '{{count}} tabelas',
+    tablesMatched_one: '{{count}} de {{total}} tabelas corresponde',
+    tablesMatched_other: '{{count}} de {{total}} tabelas correspondem',
+    loadingTables_one: 'Carregando tabelas… {{count}} lida até agora',
+    loadingTables_other: 'Carregando tabelas… {{count}} lidas até agora',
+    truncated_one:
+      'Apenas {{count}} tabela é listada; a pesquisa abrange somente ela.',
+    truncated_other:
+      'Apenas as primeiras {{count}} tabelas são listadas; a pesquisa abrange somente essas tabelas.',
+    partial_one:
+      'O carregamento parou após {{count}} tabela; a pesquisa abrange somente essa tabela.',
+    partial_other:
+      'O carregamento parou após {{count}} tabelas; a pesquisa abrange somente essas tabelas.',
+    selectedHidden: 'A tabela aberta “{{table}}” não corresponde à pesquisa.',
+    kind: {
+      table: 'Tabela',
+      view: 'Visão',
+      materializedView: 'Visão materializada',
+    },
+    kindLabel: 'Tipo',
+    collectionName: 'Nome',
+    tableName: 'Tabela',
+    schema: 'Esquema',
+    fields: 'Campos',
+    fieldsOf: 'Campos de {{table}}',
+    searchFields: 'Pesquisar por nome, título ou tipo do campo',
+    fieldCount_one: '{{count}} campo',
+    fieldCount_other: '{{count}} campos',
+    fieldsMatched_one: '{{count}} de {{total}} campos corresponde',
+    fieldsMatched_other: '{{count}} de {{total}} campos correspondem',
+    column: {
+      field: 'Campo',
+      type: 'Tipo',
+      nullable: 'Aceita nulo',
+      references: 'Referências',
+    },
+    primaryKey: 'Chave primária',
+    yes: 'Sim',
+    no: 'Não',
+    notReported: 'Não informado',
+    notApplicable: 'Não se aplica',
+    relationNullable: 'Relação, não uma coluna',
+    nullableTag: {
+      yes: 'Aceita nulo',
+      no: 'Não nulo',
+      unknown: 'Não informado se aceita nulo',
+    },
+    none: 'Nenhuma',
+    warnings_one: '{{count}} observação da inspeção',
+    warnings_other: '{{count}} observações da inspeção',
+    warningDescription: 'Alguns detalhes podem estar incompletos.',
+    backToTables: 'Todas as tabelas',
+    selectTable: 'Selecione uma tabela para ver seus campos.',
+    loading: 'Carregando',
+    signIn: 'Entrar',
+    retry: 'Tentar novamente',
+    notice: {
+      unauthenticated: 'Sessão expirada',
+      forbidden: 'Você não tem permissão para navegar pelos bancos de dados',
+      connectionNotFound: 'Esta conexão não existe',
+      tableNotFound: 'Esta tabela não existe na conexão',
+      unavailable: 'O banco de dados está indisponível no momento',
+      failed: 'Não foi possível carregar as informações do banco de dados',
+      noConnections: 'Nenhuma conexão de banco de dados está configurada',
+      noTables: 'Esta conexão não tem tabelas',
+      noFields: 'Esta tabela não tem campos',
+      noResults: 'Nenhum resultado',
+    },
+  },
+  pendingFeedback: {
+    working: 'Processando…',
+    longWait:
+      'Está demorando mais do que o normal. Você pode continuar aguardando.',
+  },
+  taskProgress: {
+    queued: 'Aguardando início',
+    running: 'Em andamento',
+    completed: 'Concluída',
+    failed: 'Falhou',
+    canceled: 'Cancelada',
+    count: '{{processed}} de {{total}}',
+    processed: '{{processed}} processados',
+    background: 'Continua em execução se você sair desta página.',
+  },
   listFeedback: {
     loading: 'Carregando',
     empty: 'Ainda não há dados',
@@ -77,6 +177,9 @@ const systemPtBR: SystemResource = {
     'Entre com seu nome de usuário ou e-mail e sua senha.',
   'auth.registerTitle': 'Criar uma conta',
   'auth.registerDescription': 'Crie uma conta para começar.',
+  'auth.registrationAccepted': 'Solicitação de cadastro enviada',
+  'auth.registrationGuidance':
+    'Tente entrar com o nome de usuário e a senha que você enviou. Se este e-mail já tiver uma conta, os novos dados não terão efeito. Entre com sua conta original ou recupere sua senha. Antes de entrar, siga as instruções de verificação fornecidas pelo aplicativo, se houver.',
   'auth.forgotTitle': 'Esqueci a senha',
   'auth.forgotDescription':
     'Informe seu e-mail e enviaremos um link de redefinição se a conta existir.',
@@ -120,9 +223,8 @@ const systemPtBR: SystemResource = {
   'auth.continueWith': 'Continuar com {provider}',
   'auth.about': 'Sobre este aplicativo',
   'auth.platform': 'Plataforma de aplicativos nativa em IA',
-  'auth.marketingTitleFirst': 'Deixe a IA construir livremente.',
-  'auth.marketingTitleSecond': 'O NocoBase mantém tudo',
-  'auth.marketingTitleThird': 'confiável.',
+  'auth.marketingTitleFirst': 'AI + NocoBase',
+  'auth.marketingTitleSecond': 'Build reliable business systems',
   'auth.marketingDescription':
     'Dê à IA um framework de frontend flexível para moldar cada experiência, enquanto o NocoBase protege os dados, as permissões e a governança por baixo.',
   'auth.frontend': 'Frontend nativo em IA',
@@ -133,10 +235,14 @@ const systemPtBR: SystemResource = {
     'Dados, controle de acesso e governança confiáveis.',
   'auth.marketingFooter': 'Liberdade em cima. Confiança embaixo.',
   'status.loading': 'Carregando',
+  'status.refreshing': 'Atualizando',
   'status.loadingPage': 'Carregando página',
   'status.denied': 'Acesso negado',
   'status.pageFailed': 'Não foi possível carregar a página',
   'status.retry': 'Tentar novamente',
+  'status.reloadPage': 'Recarregar página',
+  'status.retryFailedDescription':
+    'Ainda não foi possível carregar. Recarregar a página inteira pode ajudar; as alterações não salvas nesta página podem ser perdidas.',
   'navigation.brandHome': 'Início do NocoBase',
   'navigation.brandApps': 'Aplicativos NocoBase',
   'routeOverlay.close': 'Fechar',
@@ -144,8 +250,8 @@ const systemPtBR: SystemResource = {
   'status.routeFailedDescription':
     'Não foi possível carregar a rota {{label}} de {{packageName}}.',
   shell: {
-    buildFreely: 'A IA constrói livremente.',
-    reliability: 'O <brand>NocoBase</brand> mantém tudo confiável.',
+    brandPartnership: 'AI + <brand>NocoBase</brand>',
+    buildReliableSystems: 'Build reliable business systems',
   },
   home: {
     platform: 'NocoBase · Plataforma de aplicativos nativa em IA',
@@ -359,7 +465,7 @@ const systemPtBR: SystemResource = {
   },
 
   appearance: {
-    title: 'Aparência',
+    title: 'Tema',
     mode: 'Modo de cor',
     preset: 'Tema',
     light: 'Claro',
@@ -391,6 +497,7 @@ const systemPtBR: SystemResource = {
     signingOut: 'Saindo…',
   },
   navigation: {
+    resources: 'Recursos',
     home: 'Início',
     open: 'Abrir navegação',
     close: 'Fechar navegação',
@@ -402,6 +509,7 @@ const systemPtBR: SystemResource = {
     breadcrumb: 'Trilha de navegação',
     breadcrumbMore: 'Mostrar os níveis intermediários',
     back: 'Voltar',
+    backTo: 'Voltar para {{label}}',
   },
   dataTable: {
     noResults: 'Nenhum resultado',
@@ -421,6 +529,7 @@ const systemPtBR: SystemResource = {
   datePicker: {
     placeholder: 'Escolher uma data',
     rangePlaceholder: 'Escolher um intervalo de datas',
+    clear: 'Limpar',
   },
 };
 

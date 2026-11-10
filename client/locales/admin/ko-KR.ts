@@ -313,6 +313,120 @@ const adminKoKR: AdminResource = {
       triggered: '트리거됨',
     },
   },
+  notificationTemplates: {
+    intro:
+      '시스템이 자동으로 보내는 알림입니다. 각 알림이 언제 발송되고 누가 받으며 언어별로 어떤 내용인지 확인할 수 있습니다. 여기서는 변경할 수 없습니다.',
+    search: '검색',
+    searchPlaceholder: '이름 또는 설명',
+    category: '분류',
+    channel: '채널',
+    all: '전체',
+    empty: '등록된 알림이 없습니다.',
+    whatOne: '이 알림 템플릿',
+    when: '보내는 시점',
+    who: '받는 사람',
+    conditions: '발송 조건',
+    language: '언어',
+    source: '제공처',
+    channels: '발송 채널',
+    channelsHint: '설정되어 있고 켜져 있어도 연결이 정상이라는 뜻은 아닙니다.',
+    channelState: {
+      configured: '설정됨',
+      unconfigured: '설정 안 됨',
+      enabled: '켜짐',
+      disabled: '꺼짐',
+      unknown: '알 수 없음',
+    },
+    variables: '변수',
+    preview: '미리보기',
+    previewLanguage: '미리보기 언어',
+    previewAllLanguages:
+      '이 메일은 모든 언어를 한 통에 담고 있어 모든 수신자가 같은 내용을 받습니다.',
+    example: '예시',
+    definition: '템플릿 원문',
+    synthetic:
+      '가상의 예시 데이터입니다. 미리보기는 아무것도 보내거나 바꾸지 않습니다.',
+    html: 'HTML 버전',
+    channelTypes: {
+      'in-app': '앱 내',
+      email: '이메일',
+    },
+    contributors: {
+      itam: 'NocoITAM',
+      users: '사용자',
+    },
+    categories: {
+      accounts: '계정',
+      devices: '기기',
+      people: '인원',
+      comments: '댓글',
+    },
+    always: '작업을 한 본인에게는 보내지 않으며, 각 수신자는 한 번만 받습니다.',
+    itamLanguage:
+      '수신자의 인터페이스 언어와 관계없이 애플리케이션의 기본 언어로 보냅니다. 댓글 본문은 작성된 그대로 표시됩니다.',
+    items: {
+      loanOverdue: {
+        name: '대여 기한 초과',
+        trigger: '야간 점검에서 반납 예정일이 지난 대여 중 기기를 발견했을 때.',
+        recipients: '기기 담당자.',
+        rule: '기기와 반납 예정일마다 한 번만 보냅니다. 기한 초과가 계속되어도 다시 알리지 않습니다.',
+        variables: {
+          deviceNo: '기기 번호.',
+          date: '반납 예정일.',
+        },
+      },
+      leaverRecovery: {
+        name: '퇴사자 회수',
+        trigger:
+          '야간 작업이 퇴사로 표시되었지만 아직 기기, 재고 또는 라이선스 좌석을 보유한 사람의 회수를 준비했을 때.',
+        recipients: '해당 자산의 각 담당자. 자신이 맡은 부분만 안내받습니다.',
+        rule: '퇴사자와 담당자마다 한 번만.',
+        variables: {
+          name: '퇴사자 이름.',
+          count: '수신자가 처리해야 할 자산 수.',
+        },
+      },
+      commentMentioned: {
+        name: '댓글에서 멘션됨',
+        trigger: '레코드의 댓글에서 동료를 @로 언급했을 때.',
+        recipients: '언급된 각 동료.',
+        rule: '같은 댓글에 대해 한 사람당 한 번만 알립니다.',
+        variables: {
+          actor: '댓글 작성자.',
+          title: '댓글이 달린 레코드.',
+          text: '작성자의 말 그대로 줄인 댓글 내용.',
+        },
+      },
+      commentReplied: {
+        name: '댓글 스레드의 답글',
+        trigger: '다른 사람이 댓글을 단 레코드에 누군가 댓글을 달았을 때.',
+        recipients:
+          '스레드에 글을 쓴 모든 사람. 답글에서 @멘션된 사람은 대신 멘션 알림을 받습니다.',
+        rule: '같은 댓글에 대해 한 사람당 한 번만 알립니다.',
+        variables: {
+          actor: '댓글 작성자.',
+          title: '댓글이 달린 레코드.',
+          text: '작성자의 말 그대로 줄인 댓글 내용.',
+        },
+      },
+      usersInvitation: {
+        name: '사용자 초대',
+        trigger:
+          '관리자가 이메일 발송을 선택해 사용자를 초대하거나 초대를 다시 보냅니다.',
+        recipients: '초대받은 사람의 이메일 주소.',
+        rule: '이메일로 보내는 모든 초대에 발송되며, 끌 수 있는 스위치는 없습니다.',
+        language:
+          '지원하는 모든 언어가 한 통의 이메일에 담기고 제목은 영어입니다. 미리보기 언어를 바꿔도 내용은 달라지지 않습니다.',
+        variables: {
+          app: '애플리케이션 이름.',
+          inviter: '초대를 보낸 사람.',
+          items: '부여되는 역할 또는 권한.',
+          date: '초대 만료 시각.',
+          url: '일회용 초대 링크로, 미리보기에서는 가상의 링크를 씁니다.',
+        },
+      },
+    },
+  },
 };
 
 export default adminKoKR;

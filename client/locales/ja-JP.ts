@@ -1,6 +1,7 @@
 import type { AppResource } from './en-US.js';
 import agentChatJaJP from '../extensions/nocobase-agent-chat/locales/ja-JP.js';
 import fileUi from '../extensions/nocobase-file-component-ui/locales/ja-JP.js';
+import notificationLogsUi from '../extensions/nocobase-notification-logs-ui/locales/ja-JP.js';
 import adminJaJP from './admin/ja-JP.js';
 import systemJaJP from './system/ja-JP.js';
 
@@ -9,6 +10,9 @@ const jaJP: AppResource = {
   ...agentChatJaJP,
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
+  // The notification logs block's copy
+  // (client/extensions/nocobase-notification-logs-ui).
+  ...notificationLogsUi,
   admin: adminJaJP,
 
   appearance: {
@@ -2642,10 +2646,24 @@ const jaJP: AppResource = {
   },
   settings: {
     ...systemJaJP.settings,
+    // The Notification management module's logs view, named as the
+    // notification-logs-ui block names it, and its description
+    // (client/routes.ts, 2026-11-10).
+    notificationLogs: '通知ログ',
+    notificationManagementDescription:
+      '通知の配信状況を追跡し、登録済みの通知テンプレートと合成コンテンツのプレビューを確認します。',
+    itamModule: {
+      title: '資産管理の設定',
+      description:
+        '採番ルール、通知のしきい値、デバイス同期、承認フロー、納品書からの入荷。',
+    },
+    apiKeysDescription:
+      'スクリプトや連携があなたとして API を呼び出すためのキー。',
+    scheduledTasksDescription:
+      'スケジュールに従って実行されるタスク、最近の実行状況とオン／オフ。',
     noRoleAccess:
       'このユーザーは引き続きサインインしてアカウントの基本機能を使用できます。ロールによる業務アクセス権はありません。',
     noAssignedRoles: 'ロール未割り当て',
-    title: '設定',
     deviceSyncRules: {
       title: '照合ルール',
       description: 'MDM と台帳の差異をどのような場合に表示するか',
@@ -2907,6 +2925,8 @@ const jaJP: AppResource = {
     },
     demo: {
       title: 'デモデータ',
+      cardDescription:
+        '架空の会社のデモデータをインポートまたはリセットします。',
       description:
         '架空の会社のデータで、中国語版と英語版があります。デバイス、在庫、利用権、調達、修理、棚卸、廃棄を含み、意図的にいくつかの問題（返却期限超過の貸出、超過割り当ての利用権、棚卸の差異、退職後もノート PC を保有している従業員）を含んでいます。日付はインポートした日を基準にします。消去で削除されるのはインポートしたデータのみです。',
       generate: 'デモデータをインポート',
@@ -3605,8 +3625,6 @@ const jaJP: AppResource = {
   shell: {
     ...systemJaJP.shell,
     workspace: 'AI アプリケーションワークスペース',
-    buildFreely: 'AI が自由に構築。',
-    reliability: '<brand>NocoBase</brand> が信頼性を支えます。',
   },
   auth: {
     welcome: 'おかえりなさい',
@@ -3657,9 +3675,6 @@ const jaJP: AppResource = {
       '信頼できるデータ、アクセス制御、ワークフロー、ガバナンス。',
     foundation: 'NocoBase の基盤',
     marketingFooter: '上には自由を。下には安心を。',
-    marketingTitleFirst: 'AI は自由に構築し、',
-    marketingTitleSecond: 'NocoBase が',
-    marketingTitleThird: '信頼性を守る。',
     passwordMismatch: 'パスワードが一致しません。',
   },
   status: {

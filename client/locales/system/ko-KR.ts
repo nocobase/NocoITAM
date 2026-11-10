@@ -5,6 +5,100 @@ import inboxKoKR from '#extensions/nocobase-inbox/locales/ko-KR';
 
 /** The Korean copy of what the template ships; see `./en-US.ts`. */
 const systemKoKR: SystemResource = {
+  databaseExplorer: {
+    title: '데이터베이스 탐색기',
+    description: '애플리케이션의 데이터베이스 연결, 테이블, 필드를 살펴봅니다.',
+    connection: '연결',
+    chooseConnection: '연결 선택',
+    defaultConnection: '기본',
+    schemaManagement: {
+      managed: '애플리케이션에서 관리',
+      external: '외부에서 관리',
+    },
+    tables: '테이블',
+    tablesIn: '{{connection}}의 테이블',
+    searchTables: '테이블 이름 또는 제목으로 검색',
+    clearSearch: '검색 지우기',
+    tableCount_one: '테이블 {{count}}개',
+    tableCount_other: '테이블 {{count}}개',
+    tablesMatched_one: '테이블 {{total}}개 중 {{count}}개 일치',
+    tablesMatched_other: '테이블 {{total}}개 중 {{count}}개 일치',
+    loadingTables_one: '테이블을 불러오는 중… 지금까지 {{count}}개 읽음',
+    loadingTables_other: '테이블을 불러오는 중… 지금까지 {{count}}개 읽음',
+    truncated_one:
+      '처음 {{count}}개 테이블만 표시됩니다. 검색은 이 테이블만 대상으로 합니다.',
+    truncated_other:
+      '처음 {{count}}개 테이블만 표시됩니다. 검색은 이 테이블들만 대상으로 합니다.',
+    partial_one:
+      '테이블 {{count}}개를 불러온 뒤 중단되었습니다. 검색은 불러온 테이블만 대상으로 합니다.',
+    partial_other:
+      '테이블 {{count}}개를 불러온 뒤 중단되었습니다. 검색은 불러온 테이블만 대상으로 합니다.',
+    selectedHidden: '열려 있는 테이블 “{{table}}”이(가) 검색 결과에 없습니다.',
+    kind: { table: '테이블', view: '뷰', materializedView: '구체화된 뷰' },
+    kindLabel: '종류',
+    collectionName: '이름',
+    tableName: '테이블',
+    schema: '스키마',
+    fields: '필드',
+    fieldsOf: '{{table}}의 필드',
+    searchFields: '필드 이름, 제목 또는 유형으로 검색',
+    fieldCount_one: '필드 {{count}}개',
+    fieldCount_other: '필드 {{count}}개',
+    fieldsMatched_one: '필드 {{total}}개 중 {{count}}개 일치',
+    fieldsMatched_other: '필드 {{total}}개 중 {{count}}개 일치',
+    column: {
+      field: '필드',
+      type: '유형',
+      nullable: 'NULL 허용',
+      references: '참조',
+    },
+    primaryKey: '기본 키',
+    yes: '예',
+    no: '아니요',
+    notReported: '정보 없음',
+    notApplicable: '해당 없음',
+    relationNullable: '관계 필드이며 열이 아님',
+    nullableTag: {
+      yes: 'NULL 허용',
+      no: 'NULL 불가',
+      unknown: 'NULL 허용 여부 정보 없음',
+    },
+    none: '없음',
+    warnings_one: '검사 참고 사항 {{count}}개',
+    warnings_other: '검사 참고 사항 {{count}}개',
+    warningDescription: '일부 정보가 불완전할 수 있습니다.',
+    backToTables: '모든 테이블',
+    selectTable: '필드를 보려면 테이블을 선택하십시오.',
+    loading: '불러오는 중',
+    signIn: '로그인',
+    retry: '다시 시도',
+    notice: {
+      unauthenticated: '세션이 만료되었습니다',
+      forbidden: '데이터베이스를 탐색할 권한이 없습니다',
+      connectionNotFound: '이 연결이 존재하지 않습니다',
+      tableNotFound: '이 연결에 해당 테이블이 존재하지 않습니다',
+      unavailable: '지금은 데이터베이스를 사용할 수 없습니다',
+      failed: '데이터베이스 정보를 불러올 수 없습니다',
+      noConnections: '구성된 데이터베이스 연결이 없습니다',
+      noTables: '이 연결에 테이블이 없습니다',
+      noFields: '이 테이블에 필드가 없습니다',
+      noResults: '결과가 없습니다',
+    },
+  },
+  pendingFeedback: {
+    working: '처리하는 중…',
+    longWait: '평소보다 오래 걸리고 있습니다. 계속 기다리셔도 됩니다.',
+  },
+  taskProgress: {
+    queued: '시작 대기 중',
+    running: '진행 중',
+    completed: '완료됨',
+    failed: '실패',
+    canceled: '취소됨',
+    count: '{{processed}} / {{total}}',
+    processed: '{{processed}}개 처리됨',
+    background: '이 페이지를 떠나도 계속 실행됩니다.',
+  },
   listFeedback: {
     loading: '불러오는 중',
     empty: '아직 데이터가 없습니다',
@@ -77,6 +171,9 @@ const systemKoKR: SystemResource = {
     '사용자 이름 또는 이메일과 비밀번호로 로그인하십시오.',
   'auth.registerTitle': '계정 만들기',
   'auth.registerDescription': '계정을 만들어 시작하십시오.',
+  'auth.registrationAccepted': '등록 요청이 제출되었습니다',
+  'auth.registrationGuidance':
+    '제출한 사용자 이름과 비밀번호로 로그인해 보십시오. 이 이메일에 이미 계정이 있으면 새 정보는 적용되지 않습니다. 기존 계정으로 로그인하거나 비밀번호를 복구하십시오. 애플리케이션에서 인증 안내를 제공한 경우 로그인하기 전에 그 안내를 따르십시오.',
   'auth.forgotTitle': '비밀번호 찾기',
   'auth.forgotDescription':
     '이메일을 입력하십시오. 계정이 있으면 재설정 링크를 보내 드립니다.',
@@ -120,9 +217,8 @@ const systemKoKR: SystemResource = {
   'auth.continueWith': '{provider}(으)로 계속',
   'auth.about': '이 애플리케이션 정보',
   'auth.platform': 'AI 네이티브 애플리케이션 플랫폼',
-  'auth.marketingTitleFirst': 'AI는 자유롭게 만들고,',
-  'auth.marketingTitleSecond': 'NocoBase는',
-  'auth.marketingTitleThird': '신뢰성을 지킵니다.',
+  'auth.marketingTitleFirst': 'AI + NocoBase',
+  'auth.marketingTitleSecond': 'Build reliable business systems',
   'auth.marketingDescription':
     'AI는 유연한 프런트엔드 프레임워크로 각 경험을 만들고, NocoBase는 그 아래의 데이터, 권한, 거버넌스를 지킵니다.',
   'auth.frontend': 'AI 네이티브 프런트엔드',
@@ -132,10 +228,14 @@ const systemKoKR: SystemResource = {
   'auth.foundationDescription': '신뢰할 수 있는 데이터, 접근 제어, 거버넌스.',
   'auth.marketingFooter': '위에는 자유를, 아래에는 안심을.',
   'status.loading': '불러오는 중',
+  'status.refreshing': '새로 고치는 중',
   'status.loadingPage': '페이지를 불러오는 중',
   'status.denied': '접근이 거부되었습니다',
   'status.pageFailed': '페이지를 불러올 수 없습니다',
   'status.retry': '다시 시도',
+  'status.reloadPage': '페이지 다시 불러오기',
+  'status.retryFailedDescription':
+    '여전히 불러올 수 없습니다. 전체 페이지를 다시 불러오면 해결될 수 있지만, 이 페이지에서 저장하지 않은 변경 사항은 사라질 수 있습니다.',
   'navigation.brandHome': 'NocoBase 홈',
   'navigation.brandApps': 'NocoBase 애플리케이션',
   'routeOverlay.close': '닫기',
@@ -143,8 +243,8 @@ const systemKoKR: SystemResource = {
   'status.routeFailedDescription':
     '{{packageName}}의 라우트 {{label}}을(를) 불러올 수 없습니다.',
   shell: {
-    buildFreely: 'AI는 자유롭게 만듭니다.',
-    reliability: '<brand>NocoBase</brand>가 신뢰성을 지킵니다.',
+    brandPartnership: 'AI + <brand>NocoBase</brand>',
+    buildReliableSystems: 'Build reliable business systems',
   },
   home: {
     platform: 'NocoBase · AI 네이티브 애플리케이션 플랫폼',
@@ -354,7 +454,7 @@ const systemKoKR: SystemResource = {
   },
 
   appearance: {
-    title: '화면 모양',
+    title: '테마',
     mode: '색상 모드',
     preset: '테마',
     light: '라이트',
@@ -385,6 +485,7 @@ const systemKoKR: SystemResource = {
     signingOut: '로그아웃하는 중…',
   },
   navigation: {
+    resources: '리소스',
     home: '홈',
     open: '내비게이션 열기',
     close: '내비게이션 닫기',
@@ -396,6 +497,7 @@ const systemKoKR: SystemResource = {
     breadcrumb: '이동 경로',
     breadcrumbMore: '중간 단계 표시',
     back: '뒤로',
+    backTo: '{{label}}(으)로 돌아가기',
   },
   dataTable: {
     noResults: '결과가 없습니다',
@@ -415,6 +517,7 @@ const systemKoKR: SystemResource = {
   datePicker: {
     placeholder: '날짜 선택',
     rangePlaceholder: '기간 선택',
+    clear: '지우기',
   },
 };
 

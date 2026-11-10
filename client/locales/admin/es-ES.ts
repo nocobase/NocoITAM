@@ -317,6 +317,124 @@ const adminEsES: AdminResource = {
       triggered: 'Activada',
     },
   },
+  notificationTemplates: {
+    intro:
+      'Notificaciones que el sistema envía por sí mismo: cuándo se envía cada una, quién la recibe y qué dice en cada idioma. Aquí no se puede cambiar nada.',
+    search: 'Buscar',
+    searchPlaceholder: 'Nombre o descripción',
+    category: 'Categoría',
+    channel: 'Canal',
+    all: 'Todas',
+    empty: 'No hay notificaciones registradas.',
+    whatOne: 'esta plantilla de notificación',
+    when: 'Cuándo se envía',
+    who: 'Quién la recibe',
+    conditions: 'Condiciones',
+    language: 'Idioma',
+    source: 'Proporcionada por',
+    channels: 'Canales',
+    channelsHint:
+      'Que esté configurado y activado no garantiza que la conexión funcione.',
+    channelState: {
+      configured: 'Configurado',
+      unconfigured: 'Sin configurar',
+      enabled: 'Activado',
+      disabled: 'Desactivado',
+      unknown: 'Desconocido',
+    },
+    variables: 'Variables',
+    preview: 'Vista previa',
+    previewLanguage: 'Idioma de la vista previa',
+    previewAllLanguages:
+      'Este correo incluye todos los idiomas a la vez; todos los destinatarios reciben el mismo mensaje.',
+    example: 'Ejemplo',
+    definition: 'Plantilla',
+    synthetic:
+      'Datos de ejemplo inventados. La vista previa no envía nada ni cambia nada.',
+    html: 'Versión HTML',
+    channelTypes: {
+      'in-app': 'En la aplicación',
+      email: 'Correo',
+    },
+    contributors: {
+      itam: 'NocoITAM',
+      users: 'Usuarios',
+    },
+    categories: {
+      accounts: 'Cuentas',
+      devices: 'Dispositivos',
+      people: 'Personas',
+      comments: 'Comentarios',
+    },
+    always:
+      'Nunca se envía a la persona cuya acción la provocó, y cada destinatario la recibe una sola vez.',
+    itamLanguage:
+      'En el idioma predeterminado de la aplicación, sea cual sea el idioma de la interfaz del destinatario; el texto de un comentario aparece tal como se escribió.',
+    items: {
+      loanOverdue: {
+        name: 'Préstamo vencido',
+        trigger:
+          'La comprobación nocturna encuentra un dispositivo prestado que ha superado su fecha de devolución prevista.',
+        recipients: 'El responsable del dispositivo.',
+        rule: 'Una vez por dispositivo y fecha de devolución prevista; un préstamo que sigue vencido no se vuelve a avisar.',
+        variables: {
+          deviceNo: 'El número del dispositivo.',
+          date: 'La fecha de devolución prevista.',
+        },
+      },
+      leaverRecovery: {
+        name: 'Recuperación por baja',
+        trigger:
+          'La tarea nocturna prepara la recuperación de una persona marcada como baja que aún tiene dispositivos, existencias o licencias asignadas.',
+        recipients:
+          'Cada responsable de parte de esos bienes, informado solo de su parte.',
+        rule: 'Una vez por persona de baja y responsable.',
+        variables: {
+          name: 'El nombre de la persona de baja.',
+          count: 'Cuántos de sus bienes debe resolver el destinatario.',
+        },
+      },
+      commentMentioned: {
+        name: 'Mención en un comentario',
+        trigger: 'Un comentario en un registro menciona a un compañero con @.',
+        recipients: 'Cada compañero mencionado.',
+        rule: 'Una vez por comentario y persona.',
+        variables: {
+          actor: 'El autor del comentario.',
+          title: 'El registro comentado.',
+          text: 'El comentario, abreviado, con las palabras de su autor.',
+        },
+      },
+      commentReplied: {
+        name: 'Respuesta en un hilo de comentarios',
+        trigger: 'Alguien comenta un registro que otros ya han comentado.',
+        recipients:
+          'Todos los que han escrito en el hilo; a quienes la respuesta menciona con @ se les avisa de la mención en su lugar.',
+        rule: 'Una vez por comentario y persona.',
+        variables: {
+          actor: 'El autor del comentario.',
+          title: 'El registro comentado.',
+          text: 'El comentario, abreviado, con las palabras de su autor.',
+        },
+      },
+      usersInvitation: {
+        name: 'Invitación de usuario',
+        trigger:
+          'Un administrador invita a alguien, o reenvía una invitación, y elige el envío por correo.',
+        recipients: 'La dirección de correo de la persona invitada.',
+        rule: 'Se envía con cada invitación enviada por correo; no hay ningún interruptor para desactivarla.',
+        language:
+          'Un solo correo en todos los idiomas admitidos, con el asunto en inglés; el idioma de la vista previa no lo cambia.',
+        variables: {
+          app: 'El nombre de la aplicación.',
+          inviter: 'Quién envió la invitación.',
+          items: 'Los roles o accesos concedidos.',
+          date: 'Cuándo caduca la invitación.',
+          url: 'El enlace de invitación de un solo uso; la vista previa usa uno inventado.',
+        },
+      },
+    },
+  },
 };
 
 export default adminEsES;

@@ -3,8 +3,6 @@ import { useState, type ReactElement } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { LifecycleDiagram } from '#components/lifecycle-diagram';
-import { PageContainer } from '#components/page-container';
-import { PageHeader } from '#components/page-header';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -41,6 +39,7 @@ import {
 import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
 import { useReferenceNames } from '@/lib/itam/references';
 import { roleTitle } from '@/lib/itam/user-roles';
+import { SettingsModulePage } from '../../settings/settings-module-page.js';
 
 /** The flows the page shows, a tab each, in the order a request runs. */
 const FLOWS = [
@@ -155,11 +154,7 @@ export default function FlowsSettingsPage(): ReactElement {
   const current =
     FLOWS.find((flow) => flow.key === params.get('kind')) ?? FLOWS[0];
   return (
-    <PageContainer>
-      <PageHeader
-        title={t('settings.flows.title')}
-        description={t('settings.flows.description')}
-      />
+    <SettingsModulePage description={t('settings.flows.description')}>
       <Tabs
         value={current.key}
         onValueChange={(value) =>
@@ -187,7 +182,7 @@ export default function FlowsSettingsPage(): ReactElement {
           </TabsContent>
         ))}
       </Tabs>
-    </PageContainer>
+    </SettingsModulePage>
   );
 }
 

@@ -71,3 +71,7 @@ A release is deployed to the application `itam` in three NocoBase Studios — in
 `.github/workflows/ci.yml` runs the same checks on every push to `main` and every pull request, and builds a pull request too (2026-10-28); it pins the same pnpm and action versions as `deploy-studio.yml` and `release.yml`, so change them in all three.
 
 cn and global are public: they run with `APP_SAMPLE_DATA=false`, in Chinese and English respectively, with no AI model configured, and with the configuration's default administrator (no `INITIAL_ADMIN_PASSWORD`), a decision of 2026-10-23. To deploy by hand instead, build the same archive and run `nb-studio --profile <profile> deploy --app itam --repository nocobase/NocoITAM --sha <commit> --file storage/exports/dist.tar.gz --json`, always naming the profile, since the CLI's current profile may be another Studio.
+
+## The lockfile is pnpm 10's (2026-11-10)
+
+CI, release and deploy install with pnpm 10.34.5 and `--frozen-lockfile`, and package.json names no `packageManager`. A newer local pnpm (12) writes the patched dependencies and peer suffixes in a form pnpm 10 rejects, and even its frozen install rewrites the file. After changing dependencies or `patches/`, write the lockfile with `npx pnpm@10.34.5 install --lockfile-only` and check it with `npx pnpm@10.34.5 install --frozen-lockfile --lockfile-only` before pushing.

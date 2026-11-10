@@ -315,6 +315,121 @@ const adminJaJP: AdminResource = {
       triggered: 'トリガー済み',
     },
   },
+  notificationTemplates: {
+    intro:
+      'システムが自動で送る通知です。それぞれいつ送られ、誰が受け取り、各言語で何と書かれるかを確認できます。ここでは何も変更できません。',
+    search: '検索',
+    searchPlaceholder: '名前または説明',
+    category: 'カテゴリ',
+    channel: 'チャネル',
+    all: 'すべて',
+    empty: '登録されている通知はありません。',
+    whatOne: 'この通知テンプレート',
+    when: '送信タイミング',
+    who: '受信者',
+    conditions: '送信条件',
+    language: '言語',
+    source: '提供元',
+    channels: '送信チャネル',
+    channelsHint: '設定済み・有効でも、接続が正常に動作するとは限りません。',
+    channelState: {
+      configured: '設定済み',
+      unconfigured: '未設定',
+      enabled: '有効',
+      disabled: '無効',
+      unknown: '不明',
+    },
+    variables: '変数',
+    preview: 'プレビュー',
+    previewLanguage: 'プレビューの言語',
+    previewAllLanguages:
+      'このメールはすべての言語を1通にまとめており、受信者全員に同じ内容が届きます。',
+    example: '例',
+    definition: 'テンプレート原文',
+    synthetic:
+      '架空のサンプルデータを使用しています。プレビューしても通知は送信されず、設定も変わりません。',
+    html: 'HTML 版',
+    channelTypes: {
+      'in-app': 'アプリ内',
+      email: 'メール',
+    },
+    contributors: {
+      itam: 'NocoITAM',
+      users: 'ユーザー',
+    },
+    categories: {
+      accounts: 'アカウント',
+      devices: 'デバイス',
+      people: '人員',
+      comments: 'コメント',
+    },
+    always: '操作した本人には送られず、各受信者には一度だけ届きます。',
+    itamLanguage:
+      'アプリケーションの既定の言語で送られ、受信者の表示言語には左右されません。コメントの本文は書かれたとおりに表示されます。',
+    items: {
+      loanOverdue: {
+        name: '貸出期限超過',
+        trigger:
+          '夜間のチェックで、返却予定日を過ぎた貸出中のデバイスが見つかったとき。',
+        recipients: 'デバイスの責任者。',
+        rule: 'デバイスと返却予定日ごとに一度だけ。期限超過が続いても再通知しません。',
+        variables: {
+          deviceNo: 'デバイス番号。',
+          date: '返却予定日。',
+        },
+      },
+      leaverRecovery: {
+        name: '退職者の回収',
+        trigger:
+          '夜間のジョブが、退職済みとされながらデバイス・在庫・ライセンス席をまだ保有している人の回収を準備したとき。',
+        recipients: 'それらの資産の各責任者。自分の担当分だけが知らされます。',
+        rule: '退職者と責任者ごとに一度だけ。',
+        variables: {
+          name: '退職者の氏名。',
+          count: '受信者が処理する資産の数。',
+        },
+      },
+      commentMentioned: {
+        name: 'コメントでのメンション',
+        trigger: 'レコードへのコメントで同僚が @ メンションされたとき。',
+        recipients: 'メンションされた各同僚。',
+        rule: '同じコメントにつき、1 人 1 回のみ。',
+        variables: {
+          actor: 'コメントの投稿者。',
+          title: 'コメントされたレコード。',
+          text: 'コメント本文（短縮）。投稿者の言葉のままです。',
+        },
+      },
+      commentReplied: {
+        name: 'コメントスレッドへの返信',
+        trigger: 'ほかの人がコメントしたレコードに誰かがコメントしたとき。',
+        recipients:
+          'スレッドに書き込んだ全員。返信で @メンションされた人には、代わりにメンションの通知が届きます。',
+        rule: '同じコメントにつき、1 人 1 回のみ。',
+        variables: {
+          actor: 'コメントの投稿者。',
+          title: 'コメントされたレコード。',
+          text: 'コメント本文（短縮）。投稿者の言葉のままです。',
+        },
+      },
+      usersInvitation: {
+        name: 'ユーザー招待',
+        trigger:
+          '管理者がユーザーを招待するか招待を再送信し、メールでの送信を選んだとき。',
+        recipients: '招待された人のメールアドレス。',
+        rule: 'メールで送る招待には必ず送信されます。オフにするスイッチはありません。',
+        language:
+          '1 通のメールにサポートされているすべての言語が含まれ、件名は英語です。プレビューの言語を切り替えても内容は変わりません。',
+        variables: {
+          app: 'アプリケーションの名前。',
+          inviter: '招待した人。',
+          items: '付与されるロールまたはアクセス権。',
+          date: '招待の有効期限。',
+          url: '1 回限りの招待リンク。プレビューでは架空のリンクを使います。',
+        },
+      },
+    },
+  },
 };
 
 export default adminJaJP;

@@ -317,6 +317,125 @@ const adminIdID: AdminResource = {
       triggered: 'Dipicu',
     },
   },
+  notificationTemplates: {
+    intro:
+      'Notifikasi yang dikirim sistem dengan sendirinya: kapan masing-masing dikirim, siapa yang menerimanya, dan isinya dalam setiap bahasa. Tidak ada yang bisa diubah di sini.',
+    search: 'Cari',
+    searchPlaceholder: 'Nama atau deskripsi',
+    category: 'Kategori',
+    channel: 'Saluran',
+    all: 'Semua',
+    empty: 'Belum ada notifikasi yang terdaftar.',
+    whatOne: 'templat notifikasi ini',
+    when: 'Kapan dikirim',
+    who: 'Siapa penerimanya',
+    conditions: 'Syarat',
+    language: 'Bahasa',
+    source: 'Disediakan oleh',
+    channels: 'Saluran',
+    channelsHint:
+      'Sudah diatur dan aktif belum tentu berarti koneksinya berfungsi.',
+    channelState: {
+      configured: 'Sudah diatur',
+      unconfigured: 'Belum diatur',
+      enabled: 'Aktif',
+      disabled: 'Nonaktif',
+      unknown: 'Tidak diketahui',
+    },
+    variables: 'Variabel',
+    preview: 'Pratinjau',
+    previewLanguage: 'Bahasa pratinjau',
+    previewAllLanguages:
+      'Email ini memuat semua bahasa sekaligus; setiap penerima mendapat pesan yang sama.',
+    example: 'Contoh',
+    definition: 'Templat',
+    synthetic:
+      'Data contoh rekaan. Pratinjau tidak mengirim apa pun dan tidak mengubah apa pun.',
+    html: 'Versi HTML',
+    channelTypes: {
+      'in-app': 'Dalam aplikasi',
+      email: 'Email',
+    },
+    contributors: {
+      itam: 'NocoITAM',
+      users: 'Pengguna',
+    },
+    categories: {
+      accounts: 'Akun',
+      devices: 'Perangkat',
+      people: 'Orang',
+      comments: 'Komentar',
+    },
+    always:
+      'Tidak pernah dikirim ke orang yang tindakannya memicunya, dan setiap penerima hanya menerimanya sekali.',
+    itamLanguage:
+      'Dalam bahasa bawaan aplikasi, apa pun bahasa antarmuka penerima; teks komentar ditampilkan sebagaimana ditulis.',
+    items: {
+      loanOverdue: {
+        name: 'Peminjaman terlambat',
+        trigger:
+          'Pemeriksaan malam hari menemukan perangkat yang dipinjam melewati tanggal pengembalian yang diharapkan.',
+        recipients: 'Penanggung jawab perangkat.',
+        rule: 'Sekali per perangkat dan tanggal pengembalian; peminjaman yang tetap terlambat tidak diberitahukan lagi.',
+        variables: {
+          deviceNo: 'Nomor perangkat.',
+          date: 'Tanggal pengembalian yang diharapkan.',
+        },
+      },
+      leaverRecovery: {
+        name: 'Pengembalian karyawan keluar',
+        trigger:
+          'Tugas malam hari menyiapkan pengembalian untuk orang yang ditandai keluar namun masih memegang perangkat, stok, atau kursi lisensi.',
+        recipients:
+          'Setiap penanggung jawab sebagian aset tersebut, hanya diberi tahu bagiannya sendiri.',
+        rule: 'Sekali per karyawan keluar dan penanggung jawab.',
+        variables: {
+          name: 'Nama karyawan yang keluar.',
+          count: 'Berapa banyak asetnya yang harus diselesaikan penerima.',
+        },
+      },
+      commentMentioned: {
+        name: 'Disebut dalam komentar',
+        trigger: 'Komentar pada sebuah catatan menyebut rekan dengan @.',
+        recipients: 'Setiap rekan yang disebut.',
+        rule: 'Sekali per komentar dan orang.',
+        variables: {
+          actor: 'Penulis komentar.',
+          title: 'Catatan yang dikomentari.',
+          text: 'Komentar, dipersingkat, dengan kata-kata penulisnya sendiri.',
+        },
+      },
+      commentReplied: {
+        name: 'Balasan di utas komentar',
+        trigger:
+          'Seseorang mengomentari catatan yang sudah dikomentari orang lain.',
+        recipients:
+          'Semua yang pernah menulis di utas; yang di-@ dalam balasan menerima notifikasi sebutan sebagai gantinya.',
+        rule: 'Sekali per komentar dan orang.',
+        variables: {
+          actor: 'Penulis komentar.',
+          title: 'Catatan yang dikomentari.',
+          text: 'Komentar, dipersingkat, dengan kata-kata penulisnya sendiri.',
+        },
+      },
+      usersInvitation: {
+        name: 'Undangan pengguna',
+        trigger:
+          'Administrator mengundang seseorang, atau mengirim ulang undangan, dengan memilih pengiriman lewat email.',
+        recipients: 'Alamat email orang yang diundang.',
+        rule: 'Dikirim untuk setiap undangan lewat email; tidak ada sakelar untuk mematikannya.',
+        language:
+          'Satu email dalam semua bahasa yang didukung, dengan subjek dalam bahasa Inggris; bahasa pratinjau tidak mengubahnya.',
+        variables: {
+          app: 'Nama aplikasi.',
+          inviter: 'Pengirim undangan.',
+          items: 'Peran atau akses yang diberikan.',
+          date: 'Kapan undangan kedaluwarsa.',
+          url: 'Tautan undangan sekali pakai; pratinjau memakai tautan rekaan.',
+        },
+      },
+    },
+  },
 };
 
 export default adminIdID;

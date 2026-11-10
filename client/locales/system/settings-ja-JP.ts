@@ -4,6 +4,10 @@ import type settingsEnUS from './settings-en-US.js';
 // The template's Settings copy (client/locales/system/settings-en-US.ts): the
 // prepared Users and Roles pages and the permission editor, in ja-JP.
 const settings: LocaleResource<typeof settingsEnUS> = {
+  notificationManagementDescription:
+    '登録済みの通知テンプレートと、合成データによるプレビューを確認します。',
+  notificationTemplates: '通知テンプレート',
+  notificationManagement: '通知管理',
   listChanged: '一覧が変更されました。もう一度お試しください。',
   setup: {
     title: '機能の前提条件',
@@ -106,6 +110,19 @@ const settings: LocaleResource<typeof settingsEnUS> = {
 
   reload: 'ロールを再読み込み',
   title: 'システム設定',
+  home: {
+    description:
+      'アカウント、権限、業務設定、システム機能はすべてここにあります。',
+    empty: '管理できる設定はまだありません。',
+  },
+  categories: {
+    account: 'アカウントと権限',
+    business: '業務設定',
+    ai: 'AI',
+    system: 'システム',
+  },
+  permissionManagementDescription:
+    '各ロールが開けるページ、実行できる操作、見られるデータを設定します。',
   users: 'ユーザー',
   roles: 'ロールと権限',
   usersDescription: 'アカウント、アクセス、有効なセッションを管理します。',

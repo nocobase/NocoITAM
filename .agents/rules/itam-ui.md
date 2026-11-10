@@ -11,14 +11,15 @@ ITAM's own pages load data with the hooks in `client/lib/itam/api.ts` rather tha
 - `client/react-providers.ts` mounts a TanStack QueryClient and the tooltip
   provider (`client/lib/itam/query-provider.tsx`); pages use the hooks in
   `client/lib/itam/api.ts` rather than Refine data hooks.
-- 设置 is **one page of tabs** (2026-10-16, after NocoCRM's; it was a menu
-  section of five entries, the first of them ITAM's settings with tabs of
-  its own): 通用 (`/settings/itam`: 基本设置, 提醒阈值, 编号规则 and AI 助手,
-  one card under another, each saved by its own button), MDM, 按送货单入库,
-  用户, 角色, API 密钥, 定时任务 and 演示数据, each tab a route of its own.
-  ITAM's tabs all check the page grant `itam-settings`, so no stored
-  grant changed. A link written for the old `?tab=` still lands (`MOVED` in
-  `itam-settings.tsx`).
+- 设置 is the template's **settings home of cards** (template 1.0.0-beta.92,
+  2026-11-10; one page of tabs from 2026-10-16): 资产管理设置 is ITAM's
+  module, its tabs 通用 (`/settings/itam`: 基本设置, 提醒阈值, 编号规则 and AI
+  助手, one card under another, each saved by its own button), MDM, 流程 and
+  按送货单入库, each a route of its own framed by `SettingsModulePage`; Users,
+  Roles, API keys, scheduled tasks and 演示数据 (业务配置, beside it) are cards of their own (see
+  [conventions](itam-conventions.md)). ITAM's tabs all check the page grant
+  `itam-settings`, so no stored grant changed. A link written for the old
+  `?tab=` still lands (`MOVED` in `itam-settings.tsx`).
 - 用户 and 角色 are **NocoBase 3's prepared pages** (2026-10-24, after
   NocoCRM's; ITAM's own Users and 权限集 pages until then): `users.tsx`,
   `user-detail.tsx`, `user-form.tsx`, `roles.tsx`, `role-form.tsx`,
@@ -326,11 +327,12 @@ sideways with no scrollbar, an edge with more beyond it fading out, the open tab
 centred on arriving, when it changes and when a tab changes width (a count
 arriving) unless the reader has moved the row, and the arrow keys, Home and End
 moving between tabs and opening the one landed on. Their icons go below `md`.
-A record's tabs (`DetailPage`), `LinkTabs` and MDM 核对's use it; a bar of two or
+A record's tabs (`DetailPage`) and MDM 核对's use it; a bar of two or
 three short tabs that fit, such as 收件箱's or Agent 工作's, does not need it.
-Bars that are really separate pages opened now and then, 设置 and 报表, are a
-`Select` on a phone, choosing with a replaced address; an icon in an item needs a
-`flex items-center gap-2` wrapper or it sits slightly high.
+A bar that is really separate pages opened now and then, 报表's, is a `Select`
+on a phone, choosing with a replaced address; an icon in an item needs a
+`flex items-center gap-2` wrapper or it sits slightly high. 设置 needs neither
+since template 1.0.0-beta.92: its home of cards serves a phone too.
 
 ## Table cells stay on one line
 

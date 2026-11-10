@@ -1,5 +1,5 @@
 import { useSyncServerLocale } from '@nocobase/app-plugin-i18n/client';
-import type { ReactElement } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import type { AppClientRegisteredRoute } from '@nocobase/app-client/plugins';
 import { Outlet, useLocation } from 'react-router';
 
@@ -20,6 +20,7 @@ import { useItamQueryDefaults } from '@/lib/itam/query-defaults';
 import { titleBadgeText, useDocumentTitleBadge } from '@/lib/itam/title-badge';
 
 import { RouteTreeProvider } from '../routing/route-context.js';
+import { RouteLeaveBoundary } from '../routing/route-leave-boundary.js';
 
 import { PageBreadcrumbProvider } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
@@ -61,7 +62,8 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
   useDocumentTitleBadge(titleBadgeText(counts.inbox));
 
   const { t } = useTranslation();
-  const { items: menuItems, denied } = useRouteNavigation(routes);
+  const { items: menuItems, denied, loading } = useRouteNavigation(routes);
+  const access = useMemo(() => ({ denied, loading }), [denied, loading]);
   const { pathname } = useLocation();
   const selectedKey = selectedNavigationId(routes, pathname, denied);
   // Application change (ITAM, 2026-10-16): the brand tint and watermark on
@@ -73,7 +75,7 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
 
   return (
     // The shell owns the business route tree used by its pages and navigation.
-    <RouteTreeProvider routes={routes}>
+    <RouteTreeProvider routes={routes} access={access}>
       <PageBreadcrumbProvider>
         {/* Application change (ITAM): the Agents plugin's chat around the
             shell, so its panel survives navigation and a page can ask it
@@ -155,7 +157,9 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                       {/* Application change (ITAM): related-record links open
                         in the drawer this mounts. */}
                       <RecordDrawerProvider>
-                        <Outlet />
+                        <RouteLeaveBoundary hidden={loading}>
+                          <Outlet />
+                        </RouteLeaveBoundary>
                         {/* Inside the drawer's provider: a result opens in the
                           drawer over the page the reader is on. */}
                         <GlobalSearchDialog />

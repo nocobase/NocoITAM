@@ -1,4 +1,7 @@
 import { demoSettingsRoutes } from './lib/itam/demo-routes.js';
+import databaseExplorerRoutes from './pages/settings/database-explorer/routes.js';
+import { notificationTemplateRoute } from './pages/settings/notification-routes.js';
+import settingsShellRoutes from './pages/settings/shell-routes.js';
 import {
   defineAppRoutes,
   type AppClientRouteComponentLoader,
@@ -14,10 +17,13 @@ import {
 } from '@nocobase/app-plugin-agents/client/routes';
 import {
   AppWindow,
+  Bell,
+  Boxes,
+  CalendarClock,
+  ShieldCheck,
   BookOpen,
   Bot,
   Gauge,
-  Settings2,
   BarChart3,
   Briefcase,
   Building2,
@@ -746,223 +752,327 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
         },
       ],
     },
-    // 设置 (2026-10-16, after NocoCRM's): one menu entry, a page with a tab
-    // each (pages/settings/index.tsx). The template has no settings area and
-    // the plugins ship no pages, so the application routes its own — ITAM's
-    // settings, then the administration pages built on the plugins' APIs
-    // (client/pages/settings/, ported from NocoCRM's) — as this page's
-    // children at the /settings/... addresses they had as entries of their
-    // own, each route checking what its API checks; a tab shows only to
-    // whoever may open it. ITAM's settings tabs all check the page grant
-    // `itam-settings` the settings page held, so no stored grant changes.
-    {
-      // 系统设置 (2026-10-22): the settings page sits in a group of its own,
-      // named `settings` so that Foundation's 应用底座 joins it
-      // (`groupFoundationNavigation` merges into a group by that name) rather
-      // than standing in a second 系统设置 group below it.
-      name: 'settings',
-      navigation: { title: 'navigation.systemSettings', icon: Settings2 },
-      children: [
-        {
-          name: 'settings-home',
-          path: '/settings',
-          auth: 'required',
-          // Opens on the first tab its reader may open; API keys are everyone's.
-          authz: 'skip',
-          navigation: { title: 'navigation.settingsGroup', icon: Settings2 },
-          componentLoader: () => import('./pages/settings/index.js'),
-          children: [
-            {
-              name: 'itam-settings',
-              path: 'itam',
-              authz: {
-                resource: { type: 'page', id: 'itam-settings' },
-                action: 'access',
-              },
-              componentLoader: () =>
-                import('./pages/itam/settings/itam-settings.js'),
-            },
-            {
-              name: 'itam-settings-mdm',
-              path: 'mdm',
-              authz: {
-                resource: { type: 'page', id: 'itam-settings' },
-                action: 'access',
-              },
-              componentLoader: () => import('./pages/itam/settings/mdm.js'),
-            },
-            {
-              name: 'itam-settings-flows',
-              path: 'flows',
-              authz: {
-                resource: { type: 'page', id: 'itam-settings' },
-                action: 'access',
-              },
-              componentLoader: () => import('./pages/itam/settings/flows.js'),
-            },
-            {
-              name: 'itam-settings-receipt-agent',
-              path: 'receipt-agent',
-              authz: {
-                resource: { type: 'page', id: 'itam-settings' },
-                action: 'access',
-              },
-              componentLoader: () =>
-                import('./pages/itam/settings/receipt-agent.js'),
-            },
-            {
-              // NocoBase 3's prepared Users page (pages/settings/users.tsx,
-              // 2026-10-24, after NocoCRM's), on the users plugin's `user`
-              // record type; ITAM's additions are in pages/settings/accounts/.
-              name: 'settings-users',
-              path: 'users',
-              authz: { resource: { type: 'user', id: '*' }, action: 'read' },
-              componentLoader: () => import('./pages/settings/users.js'),
-              children: [
-                {
-                  name: 'settings-users-create',
-                  path: 'create',
-                  authz: {
-                    resource: { type: 'user', id: '*' },
-                    action: 'create',
-                  },
-                  componentLoader: () =>
-                    import('./pages/settings/user-form.js'),
-                },
-                {
-                  // Application addition: inviting by email, which the
-                  // prepared pages leave out (pages/settings/accounts/).
-                  name: 'settings-users-invite',
-                  path: 'invite',
-                  authz: {
-                    resource: { type: 'user', id: '*' },
-                    action: 'invite',
-                  },
-                  componentLoader: () =>
-                    import('./pages/settings/accounts/invite.js'),
-                },
-                {
-                  // Application addition: a new password set by an
-                  // administrator.
-                  name: 'settings-users-password',
-                  path: ':userId/password',
-                  componentLoader: () =>
-                    import('./pages/settings/accounts/password.js'),
-                },
-                {
-                  name: 'settings-user',
-                  path: ':userId',
-                  componentLoader: () =>
-                    import('./pages/settings/user-detail.js'),
-                  children: [
-                    {
-                      name: 'settings-user-edit',
-                      path: 'edit',
-                      componentLoader: () =>
-                        import('./pages/settings/user-form.js'),
-                    },
-                  ],
-                },
-              ],
-            },
-            {
-              // NocoBase 3's prepared Roles page and its permission editor
-              // (pages/settings/roles.tsx, role-form.tsx), without the
-              // Default access page. A role is a permission set; the stored
-              // keys (`itam-it-support`, `itam-asset-manager`) are unchanged.
-              name: 'settings-roles',
-              path: 'roles',
-              authz: {
-                resource: {
-                  type: 'settings',
-                  id: 'authorization.permission-sets',
-                },
-                action: 'read',
-              },
-              componentLoader: () => import('./pages/settings/roles.js'),
-              children: [
-                {
-                  name: 'settings-role-create',
-                  path: 'create',
-                  authz: {
-                    resource: {
-                      type: 'settings',
-                      id: 'authorization.permission-sets',
-                    },
-                    action: 'create',
-                  },
-                  componentLoader: () =>
-                    import('./pages/settings/role-form.js'),
-                },
-                {
-                  name: 'settings-role-edit',
-                  path: ':key/edit',
-                  componentLoader: () =>
-                    import('./pages/settings/role-form.js'),
-                },
-              ],
-            },
-            {
-              // The address ITAM's own Permission sets page had, kept for
-              // links and bookmarks.
-              name: 'settings-permission-sets',
-              path: 'permission-sets',
-              authz: {
-                resource: {
-                  type: 'settings',
-                  id: 'authorization.permission-sets',
-                },
-                action: 'read',
-              },
-              componentLoader: () =>
-                import('./pages/settings/permission-sets-redirect.js'),
-            },
-            {
-              // Every signed-in person manages their own keys only; the API
-              // answers for the caller alone.
-              name: 'settings-api-keys',
-              path: 'api-keys',
-              authz: 'skip',
-              componentLoader: () =>
-                import('./pages/settings/api-keys/index.js'),
-              children: [
-                {
-                  name: 'settings-api-keys-new',
-                  path: 'new',
-                  componentLoader: () =>
-                    import('./pages/settings/api-keys/new.js'),
-                },
-              ],
-            },
-            {
-              // The page grant the scheduler's API checks.
-              name: 'settings-scheduled-tasks',
-              path: 'scheduled-tasks',
-              authz: {
-                resource: { type: 'page', id: 'scheduler.schedules' },
-                action: 'access',
-              },
-              componentLoader: () =>
-                import('./pages/settings/scheduled-tasks/index.js'),
-              children: [
-                {
-                  name: 'settings-scheduled-task',
-                  path: ':scheduleId',
-                  componentLoader: () =>
-                    import('./pages/settings/scheduled-tasks/detail.js'),
-                },
-              ],
-            },
-            ...demoSettingsRoutes,
-          ],
-        },
-      ],
-    },
   ]);
 
 const appRoutes: AppClientRouteContribution =
   defineAppRoutes(appRouteDefinitions);
 
-const routes: readonly AppClientRouteContribution[] = [appRoutes];
+const ITAM_SETTINGS_GRANT = {
+  resource: { type: 'page', id: 'itam-settings' },
+  action: 'access',
+} as const;
+
+/**
+ * 系统设置 (template 1.0.0-beta.92, 2026-11-10): the template's settings shell
+ * (pages/settings/shell-routes.ts) — one sidebar entry opening a home of
+ * cards by category — holds what ITAM's own tabbed settings page held from
+ * 2026-10-16. Each page keeps its route name, its /settings/... address and
+ * its grant, so stored grants, links and bookmarks are unchanged; only its
+ * place moved, `parent` naming its category. ITAM's four configuration pages
+ * are one module, their tabs (`SettingsModulePage`); Users, Roles and API
+ * keys sit under 账号与权限, the demo data under 业务配置, and notification
+ * management and scheduled tasks under 系统, beside the template's App
+ * Foundation and Database Explorer.
+ */
+const settingsRoutes: AppClientRouteContribution = defineAppRoutes(
+  withPageGrants([
+    {
+      parent: 'settingsBusiness',
+      name: 'itamSettings',
+      navigation: {
+        title: 'settings.itamModule.title',
+        description: 'settings.itamModule.description',
+        icon: Boxes,
+      },
+      breadcrumb: { title: 'settings.itamModule.title' },
+      children: [
+        {
+          name: 'itam-settings',
+          path: '/itam',
+          auth: 'required',
+          authz: ITAM_SETTINGS_GRANT,
+          navigation: { title: 'navigation.settingsGeneral' },
+          breadcrumb: { title: 'navigation.settingsGeneral' },
+          componentLoader: () =>
+            import('./pages/itam/settings/itam-settings.js'),
+        },
+        {
+          name: 'itam-settings-mdm',
+          path: '/mdm',
+          auth: 'required',
+          authz: ITAM_SETTINGS_GRANT,
+          navigation: { title: 'settings.deviceSync.title' },
+          breadcrumb: { title: 'settings.deviceSync.title' },
+          componentLoader: () => import('./pages/itam/settings/mdm.js'),
+        },
+        {
+          // The record lifecycles and their approvers (2026-10-19).
+          name: 'itam-settings-flows',
+          path: '/flows',
+          auth: 'required',
+          authz: ITAM_SETTINGS_GRANT,
+          navigation: { title: 'settings.flows.title' },
+          breadcrumb: { title: 'settings.flows.title' },
+          componentLoader: () => import('./pages/itam/settings/flows.js'),
+        },
+        {
+          name: 'itam-settings-receipt-agent',
+          path: '/receipt-agent',
+          auth: 'required',
+          authz: ITAM_SETTINGS_GRANT,
+          navigation: { title: 'settings.receiptAgent.title' },
+          breadcrumb: { title: 'settings.receiptAgent.title' },
+          componentLoader: () =>
+            import('./pages/itam/settings/receipt-agent.js'),
+        },
+      ],
+    },
+    {
+      // NocoBase 3's prepared Users page (pages/settings/users.tsx,
+      // 2026-10-24, after NocoCRM's), on the users plugin's `user` record
+      // type; ITAM's additions are in pages/settings/accounts/. The forms
+      // declare their presentation (beta.92), and a user's own address
+      // forwards to the editor, its sibling.
+      parent: 'settingsAccount',
+      name: 'settings-users',
+      path: '/users',
+      auth: 'required',
+      authz: { resource: { type: 'user', id: '*' }, action: 'read' },
+      navigation: {
+        title: 'settings.users',
+        description: 'settings.usersDescription',
+        icon: Users,
+      },
+      breadcrumb: { title: 'settings.users' },
+      componentLoader: () => import('./pages/settings/users.js'),
+      children: [
+        {
+          name: 'settings-users-create',
+          path: 'create',
+          authz: { resource: { type: 'user', id: '*' }, action: 'create' },
+          presentation: { kind: 'dialog', title: 'settings.newUser' },
+          componentLoader: () => import('./pages/settings/user-form.js'),
+        },
+        {
+          // Application addition: inviting by email, which the prepared
+          // pages leave out (pages/settings/accounts/).
+          name: 'settings-users-invite',
+          path: 'invite',
+          authz: { resource: { type: 'user', id: '*' }, action: 'invite' },
+          componentLoader: () => import('./pages/settings/accounts/invite.js'),
+        },
+        {
+          // Application addition: a new password set by an administrator.
+          name: 'settings-users-password',
+          path: ':userId/password',
+          componentLoader: () =>
+            import('./pages/settings/accounts/password.js'),
+        },
+        {
+          name: 'settings-user',
+          path: ':userId',
+          componentLoader: () => import('./pages/settings/user-detail.js'),
+        },
+        {
+          name: 'settings-user-edit',
+          path: ':userId/edit',
+          presentation: { kind: 'drawer', title: 'settings.editUser' },
+          componentLoader: () => import('./pages/settings/user-form.js'),
+        },
+      ],
+    },
+    {
+      // NocoBase 3's prepared Roles page and its permission editor
+      // (pages/settings/roles.tsx, role-form.tsx), without the Default access
+      // page, so the module has one view. A role is a permission set; the
+      // stored keys (`itam-it-support`, `itam-asset-manager`) are unchanged.
+      parent: 'settingsAccount',
+      name: 'permissionManagement',
+      navigation: {
+        title: 'settings.permissionManagement',
+        description: 'settings.permissionManagementDescription',
+        icon: ShieldCheck,
+      },
+      breadcrumb: { title: 'settings.permissionManagement' },
+      children: [
+        {
+          name: 'settings-roles',
+          path: '/roles',
+          auth: 'required',
+          authz: {
+            resource: {
+              type: 'settings',
+              id: 'authorization.permission-sets',
+            },
+            action: 'read',
+          },
+          navigation: { title: 'settings.roles', icon: KeyRound },
+          breadcrumb: { title: 'settings.roles' },
+          componentLoader: () => import('./pages/settings/roles.js'),
+          children: [
+            {
+              name: 'settings-role-create',
+              path: 'create',
+              authz: {
+                resource: {
+                  type: 'settings',
+                  id: 'authorization.permission-sets',
+                },
+                action: 'create',
+              },
+              breadcrumb: { title: 'settings.newRole' },
+              presentation: { kind: 'child-page' },
+              componentLoader: () => import('./pages/settings/role-form.js'),
+            },
+            {
+              name: 'settings-role-edit',
+              path: ':key/edit',
+              breadcrumb: { title: 'settings.editRole' },
+              presentation: { kind: 'child-page' },
+              componentLoader: () => import('./pages/settings/role-form.js'),
+            },
+          ],
+        },
+        {
+          // The address ITAM's own Permission sets page had, kept for links
+          // and bookmarks.
+          name: 'settings-permission-sets',
+          path: '/permission-sets',
+          auth: 'required',
+          authz: {
+            resource: {
+              type: 'settings',
+              id: 'authorization.permission-sets',
+            },
+            action: 'read',
+          },
+          componentLoader: () =>
+            import('./pages/settings/permission-sets-redirect.js'),
+        },
+      ],
+    },
+    {
+      // Every signed-in person manages their own keys only; the API answers
+      // for the caller alone.
+      parent: 'settingsAccount',
+      name: 'settings-api-keys',
+      path: '/api-keys',
+      auth: 'required',
+      authz: 'skip',
+      navigation: {
+        title: 'navigation.apiKeys',
+        description: 'settings.apiKeysDescription',
+        icon: KeyRound,
+      },
+      breadcrumb: { title: 'navigation.apiKeys' },
+      componentLoader: () => import('./pages/settings/api-keys/index.js'),
+      children: [
+        {
+          name: 'settings-api-keys-new',
+          path: 'new',
+          componentLoader: () => import('./pages/settings/api-keys/new.js'),
+        },
+      ],
+    },
+    {
+      // The template's Notification management module, with the template's
+      // own title, description and icon. Application change (2026-11-10, as
+      // NocoCRM has it): declared here with both its views, Notification
+      // templates first, then Notification logs (the UI Library's
+      // notification-logs-ui block), rather than letting
+      // `includeNotificationTemplateRoutes` add the templates only where an
+      // invitation mailer is configured: ITAM always sends notifications of
+      // its own (server/providers/itam/notification-templates.ts).
+      parent: 'settingsSystem',
+      name: 'notificationManagement',
+      navigation: {
+        title: 'settings.notificationManagement',
+        description: 'settings.notificationManagementDescription',
+        icon: Bell,
+      },
+      breadcrumb: { title: 'settings.notificationManagement' },
+      children: [
+        // The template's view at its address, /settings/notifications/templates.
+        {
+          ...notificationTemplateRoute,
+          path: '/notifications/templates',
+          // Application change: a template opens in a drawer over the list
+          // (notification-template-detail.tsx) rather than under its cards.
+          children: [
+            {
+              name: 'notificationTemplate',
+              path: ':templateId',
+              presentation: {
+                kind: 'drawer',
+                title: 'settings.notificationTemplates',
+              },
+              componentLoader: () =>
+                import('./pages/settings/notification-template-detail.js'),
+            },
+          ],
+        },
+        {
+          // The page checks the same grant as GET /api/notifications/logs.
+          name: 'notificationLogs',
+          path: '/notifications/logs',
+          auth: 'required',
+          authz: {
+            resource: { type: 'page', id: 'notification.logs' },
+            action: 'access',
+          },
+          navigation: { title: 'settings.notificationLogs' },
+          breadcrumb: { title: 'settings.notificationLogs' },
+          componentLoader: () =>
+            import('./pages/settings/notification-logs.js'),
+        },
+      ],
+    },
+    {
+      // The page grant the scheduler's API checks.
+      parent: 'settingsSystem',
+      name: 'settings-scheduled-tasks',
+      path: '/scheduled-tasks',
+      auth: 'required',
+      authz: {
+        resource: { type: 'page', id: 'scheduler.schedules' },
+        action: 'access',
+      },
+      navigation: {
+        title: 'navigation.scheduledTasks',
+        description: 'settings.scheduledTasksDescription',
+        icon: CalendarClock,
+      },
+      breadcrumb: { title: 'navigation.scheduledTasks' },
+      componentLoader: () =>
+        import('./pages/settings/scheduled-tasks/index.js'),
+      children: [
+        {
+          name: 'settings-scheduled-task',
+          path: ':scheduleId',
+          componentLoader: () =>
+            import('./pages/settings/scheduled-tasks/detail.js'),
+        },
+      ],
+    },
+    ...demoSettingsRoutes,
+  ]),
+);
+
+/**
+ * The application's routes (template 1.0.0-beta.92): its pages, the settings
+ * shell and what ITAM and the template put in it. ITAM declares 系统 →
+ * 通知管理 itself in `settingsRoutes` (2026-11-10, as NocoCRM has it), so the
+ * template's `includeNotificationTemplateRoutes` is no longer called.
+ */
+export function createApplicationRoutes(): readonly AppClientRouteContribution[] {
+  return [
+    appRoutes,
+    settingsShellRoutes,
+    settingsRoutes,
+    databaseExplorerRoutes,
+  ];
+}
+
+const routes: readonly AppClientRouteContribution[] = createApplicationRoutes();
 
 export default routes;
