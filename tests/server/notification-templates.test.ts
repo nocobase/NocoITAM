@@ -73,8 +73,15 @@ describe('configured Default', () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: 'users.invitation',
+          // Since Notification 2.0.0-beta.8 a channel also carries its
+          // translatable label and type label.
           channels: [
-            { name: 'system', type: 'email', configured: true, enabled: true },
+            expect.objectContaining({
+              name: 'system',
+              type: 'email',
+              configured: true,
+              enabled: true,
+            }),
           ],
         }),
       ]),
