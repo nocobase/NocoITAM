@@ -31,7 +31,8 @@ test('keeps plugin presentation preferences per visitor across account switches'
   };
   const defaults = await read(page);
   const choices = {
-    locale: defaults.locale === 'zh-CN' ? 'en-US' : 'zh-CN',
+    // Demo Mode 0.2.0-beta.11 isolates the key the language switcher saves.
+    'i18n.locale': defaults['i18n.locale'] === 'zh-CN' ? 'en-US' : 'zh-CN',
     'theme.mode': defaults['theme.mode'] === 'dark' ? 'light' : 'dark',
     'theme.preset':
       defaults['theme.preset'] === 'compact' ? 'default' : 'compact',

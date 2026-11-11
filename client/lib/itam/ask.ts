@@ -9,7 +9,10 @@ import {
   type ChatContextItem,
 } from '@nocobase/app-plugin-agents/client/chat';
 import {
-  CHAT_ATTACHMENT_SIZE_MAX,
+  limitBytes,
+  useFileUploadLimit,
+} from '@nocobase/app-plugin-file/client';
+import {
   CHAT_ATTACHMENTS_PER_MESSAGE_MAX,
   type ChatAgent,
   type MessageAttachment,
@@ -173,6 +176,8 @@ export function useAskFiles(): AskFiles {
   const { t } = useTranslation();
   const toaster = useToaster();
   const uploads = useChatAttachments();
+  // Per file, the Drive attachment limit the page publishes (20 MB unless configured).
+  const maxSize = limitBytes(useFileUploadLimit());
   const [files, setFiles] = useState<readonly AskFile[]>([]);
   const upload = useCallback(
     (picked: readonly File[]): void => {
@@ -185,7 +190,7 @@ export function useAskFiles(): AskFiles {
           }),
         });
       const accepted = picked.slice(0, Math.max(0, room)).filter((file) => {
-        if (file.size <= CHAT_ATTACHMENT_SIZE_MAX) return true;
+        if (file.size <= maxSize) return true;
         toaster.show({
           type: 'error',
           title: t('ai.dock.fileTooLarge', { name: file.name }),
@@ -224,7 +229,7 @@ export function useAskFiles(): AskFiles {
           },
         );
     },
-    [files.length, t, toaster, uploads],
+    [files.length, maxSize, t, toaster, uploads],
   );
   const remove = useCallback(
     (uid: string) => {

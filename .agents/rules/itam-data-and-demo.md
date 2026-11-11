@@ -385,10 +385,14 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
 - Keep ITAM's write exceptions empty. External effects, background maintenance,
   sync, lifecycle effect workers and automatic work agents stay idle; read-side
   caches must not write. Do not provision real model credentials in Demo Mode.
-- **Plugin integration, 0.2.0-beta.5 (2026-10-28), now 0.2.0-beta.9
-  (2026-11-06).** Since beta.9 the plugin signs an anonymous visitor in on
+- **Plugin integration, 0.2.0-beta.5 (2026-10-28), now 0.2.0-beta.11
+  (2026-11-11).** Since beta.9 the plugin signs an anonymous visitor in on
   any protected deep link, keeping the full destination URL; ITAM has no
-  sign-in redirect of its own and must not add one. Import `isDemoMode` from the plugin's server entry and the boolean `useDemoMode` from its client
+  sign-in redirect of its own and must not add one. Since beta.11 the
+  visitor's language is the Users preference `i18n.locale`, kept in the
+  visitor's browser session beside `theme.mode` and `theme.preset` (it
+  replaced the unused `locale` key; `tests/playwright/demo-preferences.test.ts`
+  checks the three); ITAM keeps no language choice of its own. Import `isDemoMode` from the plugin's server entry and the boolean `useDemoMode` from its client
   entry. The client uses published startup configuration, with no status query
   or loading state. `server/app.ts` registers the plugin's `demoEffectsGuard`
   after i18n with ITAM's protected paths, `/api/auth/request-password-reset`

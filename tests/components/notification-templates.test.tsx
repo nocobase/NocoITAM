@@ -2,6 +2,7 @@ import { answerApi, renderWithApp } from '@nocobase/app-testing/client';
 import { resolveAppClientContributions } from '@nocobase/app-client/plugins';
 import type {
   NotificationTemplatePreview,
+  NotificationTemplateText,
   NotificationTemplateView,
 } from '@nocobase/app-plugin-notification/client';
 import { screen, waitFor, within } from '@testing-library/react';
@@ -21,10 +22,26 @@ import { RouteTreeProvider } from '../../client/routing/route-context.js';
 // API, in the reader's language, grouped by category, a template opening in
 // a drawer with its preview in the interface language.
 
+// The namespace of a plugin that registers its template's words as
+// translation keys (below), in the reader's language.
+const acme = {
+  category: '键入类别',
+  name: '键入名称',
+  trigger: '键入触发',
+  recipients: '键入收件人',
+  rule: '键入规则',
+  language: '键入语言策略',
+  thing: '键入变量',
+};
+
 const namespaces = {
   [metadata.name]: {
     'en-US': async () => ({ default: enUS }),
     'zh-CN': async () => ({ default: zhCN }),
+  },
+  acme: {
+    'en-US': async () => ({ default: {} }),
+    'zh-CN': async () => ({ default: acme }),
   },
 };
 
@@ -39,7 +56,7 @@ const { routes } = resolveAppClientContributions([
 const LOCALES = ['zh-CN', 'en-US'];
 const view = (
   id: string,
-  category: string,
+  category: NotificationTemplateText,
   type = 'in-app',
 ): NotificationTemplateView => ({
   id,
@@ -54,6 +71,7 @@ const view = (
   recipients: 'Registered recipients',
   businessRule: 'Registered rule',
   locales: LOCALES,
+  localeMode: 'separate',
   languagePolicy: 'Registered language policy',
   variables: [
     { name: 'deviceNo', description: 'Registered variable' },
@@ -68,12 +86,39 @@ const view = (
     },
   ],
 });
+// Since Notification 2.0.0-beta.8 a registration may give its words as
+// translation keys, as the Users plugin's invitation does from 2.0.0-beta.19.
+const key = (ns: string, name: string, defaultValue: string) => ({
+  ns,
+  key: name,
+  defaultValue,
+});
+const keyed: NotificationTemplateView = {
+  ...view('acme.keyed', key('acme', 'category', 'Keyed category')),
+  name: key('acme', 'name', 'Keyed name'),
+  trigger: key('acme', 'trigger', 'Keyed trigger'),
+  recipients: key('acme', 'recipients', 'Keyed recipients'),
+  businessRule: key('acme', 'rule', 'Keyed rule'),
+  languagePolicy: key('acme', 'language', 'Keyed language policy'),
+  variables: [
+    { name: 'thing', description: key('acme', 'thing', 'Keyed variable') },
+  ],
+};
 const TEMPLATES = [
-  view('users.invitation', 'Accounts', 'email'),
+  view(
+    'users.invitation',
+    key(
+      '@nocobase/app-plugin-users',
+      'notificationTemplates.category',
+      'Accounts',
+    ),
+    'email',
+  ),
   view('itam.loan-overdue', 'Devices'),
   view('itam.leaver-recovery', 'People'),
   view('itam.comment-mentioned', 'Comments'),
   view('acme.unknown', 'Elsewhere'),
+  keyed,
 ];
 
 function Where() {
@@ -152,6 +197,26 @@ it('lists the templates by category in the reader’s language, registered Engli
   expect(within(accounts).getByText('邮件')).toBeTruthy();
   const elsewhere = screen.getByRole('region', { name: 'Elsewhere' });
   expect(within(elsewhere).getByText('Registered acme.unknown')).toBeTruthy();
+  // A registration's translation keys, in the reader's language.
+  const keyedCategory = await screen.findByRole('region', {
+    name: '键入类别',
+  });
+  expect(within(keyedCategory).getByText('键入名称')).toBeTruthy();
+  expect(within(keyedCategory).getByText('键入触发')).toBeTruthy();
+});
+
+it('opens a template registered with translation keys in the reader’s language', async () => {
+  const user = userEvent.setup();
+  await mount();
+  await user.click(await screen.findByText('键入名称'));
+  const drawer = await screen.findByRole('dialog');
+  expect(
+    await within(drawer).findByRole('heading', { name: '键入名称' }),
+  ).toBeTruthy();
+  expect(within(drawer).getByText('键入收件人')).toBeTruthy();
+  expect(within(drawer).getByText('键入规则')).toBeTruthy();
+  expect(within(drawer).getByText(/键入语言策略/u)).toBeTruthy();
+  expect(within(drawer).getByText('键入变量')).toBeTruthy();
 });
 
 it('searches the translated words and filters by channel', async () => {
