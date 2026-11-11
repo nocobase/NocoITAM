@@ -7,7 +7,9 @@ import { expect, it } from 'vitest';
 // .agents/rules/shell.md): fails once the plugin moves off the patched
 // version, so the patch is checked against the new release and removed when
 // the plugin fixes its route matching, and fails if the patch did not apply.
-const PATCHED = '0.2.0-beta.9';
+// Carried over unchanged to 0.2.0-beta.11 (2026-11-11), which still has the
+// fault.
+const PATCHED = '0.2.0-beta.11';
 const require = createRequire(import.meta.url);
 const manifest = require.resolve('@nocobase/app-plugin-demo-mode/package.json');
 
