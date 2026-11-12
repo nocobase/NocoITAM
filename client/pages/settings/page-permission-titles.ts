@@ -24,4 +24,6 @@ export const pagePermissionTitles: PagePermissionTitles = {
   // The Agents plugin's page of the agents discovered from runners, which
   // ITAM routes without a menu entry.
   agents: 'admin.pages.runnerAgents',
+  // The template detail drawer shares the list page grant (template 1.0.0-beta.94).
+  notificationTemplate: 'settings.notificationTemplates',
 };

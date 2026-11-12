@@ -246,6 +246,11 @@ const systemPtBR: SystemResource = {
   'navigation.brandHome': 'Início do NocoBase',
   'navigation.brandApps': 'Aplicativos NocoBase',
   'routeOverlay.close': 'Fechar',
+  'routeOverlay.discardTitle': 'Descartar alterações?',
+  'routeOverlay.discardDescription':
+    'Suas alterações não foram salvas e serão perdidas.',
+  'routeOverlay.keepEditing': 'Continuar editando',
+  'routeOverlay.discard': 'Descartar',
   'status.deniedDescription': 'Você não tem permissão para acessar {{label}}.',
   'status.routeFailedDescription':
     'Não foi possível carregar a rota {{label}} de {{packageName}}.',
@@ -515,6 +520,11 @@ const systemPtBR: SystemResource = {
     noResults: 'Nenhum resultado',
     sortAscending: 'Crescente',
     sortDescending: 'Decrescente',
+    sort: 'Ordenar',
+    sortBy: 'Ordenar por',
+    filters: 'Filtros',
+    filtersApplied: 'Filtros · {{count}}',
+    selectPage: 'Selecionar tudo nesta página',
     hideColumn: 'Ocultar',
     view: 'Exibição',
     toggleColumns: 'Mostrar colunas',

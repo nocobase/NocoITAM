@@ -250,6 +250,11 @@ const systemDeDE: SystemResource = {
   'navigation.brandHome': 'NocoBase-Startseite',
   'navigation.brandApps': 'NocoBase-Anwendungen',
   'routeOverlay.close': 'Schließen',
+  'routeOverlay.discardTitle': 'Änderungen verwerfen?',
+  'routeOverlay.discardDescription':
+    'Ihre Änderungen wurden nicht gespeichert und gehen verloren.',
+  'routeOverlay.keepEditing': 'Weiter bearbeiten',
+  'routeOverlay.discard': 'Verwerfen',
   'status.deniedDescription':
     'Sie haben keine Berechtigung für den Zugriff auf {{label}}.',
   'status.routeFailedDescription':
@@ -520,6 +525,11 @@ const systemDeDE: SystemResource = {
     noResults: 'Keine Ergebnisse',
     sortAscending: 'Aufst.',
     sortDescending: 'Abst.',
+    sort: 'Sortieren',
+    sortBy: 'Sortieren nach',
+    filters: 'Filter',
+    filtersApplied: 'Filter · {{count}}',
+    selectPage: 'Alle auf dieser Seite auswählen',
     hideColumn: 'Ausblenden',
     view: 'Ansicht',
     toggleColumns: 'Spalten ein-/ausblenden',
