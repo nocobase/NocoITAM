@@ -921,14 +921,16 @@ const settingsRoutes: AppClientRouteContribution = defineAppRoutes(
                 action: 'create',
               },
               breadcrumb: { title: 'settings.newRole' },
-              presentation: { kind: 'child-page' },
+              // ITAM's role form is a drawer over the roles list (the
+              // template's is a child page that replaces it).
+              presentation: { kind: 'drawer', title: 'settings.newRole' },
               componentLoader: () => import('./pages/settings/role-form.js'),
             },
             {
               name: 'settings-role-edit',
               path: ':key/edit',
               breadcrumb: { title: 'settings.editRole' },
-              presentation: { kind: 'child-page' },
+              presentation: { kind: 'drawer', title: 'settings.editRole' },
               componentLoader: () => import('./pages/settings/role-form.js'),
             },
           ],

@@ -264,6 +264,21 @@ describe('app client routes', () => {
       pages.find((page) => page.name === 'devices-detail')?.authorizedAs,
     ).toBeNull();
   });
+
+  // ITAM's role form is a drawer: declared a child page, it replaced the
+  // roles list behind it with an empty page (2026-11-12).
+  it('opens the role form as a drawer over the roles list', () => {
+    const flat = (
+      routes: readonly AppClientRegisteredRoute[],
+    ): AppClientRegisteredRoute[] =>
+      routes.flatMap((route) => [route, ...flat(route.children ?? [])]);
+    const routes = flat(resolveRoutes().routes);
+    for (const name of ['settings-role-create', 'settings-role-edit']) {
+      expect(
+        routes.find((route) => route.name === name)?.presentation?.kind,
+      ).toBe('drawer');
+    }
+  });
 });
 
 /** This application's own contribution, registered the way the client runtime registers it. */
