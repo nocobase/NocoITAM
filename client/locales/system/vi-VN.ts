@@ -244,6 +244,11 @@ const systemViVN: SystemResource = {
   'navigation.brandHome': 'Trang chủ NocoBase',
   'navigation.brandApps': 'Ứng dụng NocoBase',
   'routeOverlay.close': 'Đóng',
+  'routeOverlay.discardTitle': 'Hủy các thay đổi?',
+  'routeOverlay.discardDescription':
+    'Các thay đổi của bạn chưa được lưu và sẽ bị mất.',
+  'routeOverlay.keepEditing': 'Tiếp tục chỉnh sửa',
+  'routeOverlay.discard': 'Hủy thay đổi',
   'status.deniedDescription': 'Bạn không có quyền truy cập {{label}}.',
   'status.routeFailedDescription':
     'Không thể tải route {{label}} từ {{packageName}}.',
@@ -511,6 +516,11 @@ const systemViVN: SystemResource = {
     noResults: 'Không có kết quả',
     sortAscending: 'Tăng dần',
     sortDescending: 'Giảm dần',
+    sort: 'Sắp xếp',
+    sortBy: 'Sắp xếp theo',
+    filters: 'Bộ lọc',
+    filtersApplied: 'Bộ lọc · {{count}}',
+    selectPage: 'Chọn tất cả trên trang này',
     hideColumn: 'Ẩn',
     view: 'Hiển thị',
     toggleColumns: 'Ẩn/hiện cột',

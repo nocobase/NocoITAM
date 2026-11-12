@@ -247,6 +247,11 @@ const systemEsES: SystemResource = {
   'navigation.brandHome': 'Inicio de NocoBase',
   'navigation.brandApps': 'Aplicaciones de NocoBase',
   'routeOverlay.close': 'Cerrar',
+  'routeOverlay.discardTitle': '¿Descartar los cambios?',
+  'routeOverlay.discardDescription':
+    'Tus cambios no se han guardado y se perderán.',
+  'routeOverlay.keepEditing': 'Seguir editando',
+  'routeOverlay.discard': 'Descartar',
   'status.deniedDescription': 'No tiene permiso para acceder a {{label}}.',
   'status.routeFailedDescription':
     'No se ha podido cargar la ruta {{label}} de {{packageName}}.',
@@ -515,6 +520,11 @@ const systemEsES: SystemResource = {
     noResults: 'Sin resultados',
     sortAscending: 'Asc.',
     sortDescending: 'Desc.',
+    sort: 'Ordenar',
+    sortBy: 'Ordenar por',
+    filters: 'Filtros',
+    filtersApplied: 'Filtros · {{count}}',
+    selectPage: 'Seleccionar todo en esta página',
     hideColumn: 'Ocultar',
     view: 'Vista',
     toggleColumns: 'Mostrar u ocultar columnas',

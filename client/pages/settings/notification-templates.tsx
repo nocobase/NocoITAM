@@ -48,6 +48,7 @@ import { useAdminText } from './common/hooks.js';
 import { SettingsModulePage } from './settings-module-page.js';
 import {
   NOTIFICATION_TEMPLATES_KEY,
+  templateDefaultText,
   useTemplateText,
   type TemplateText,
 } from './notification-template-text.js';
@@ -77,10 +78,19 @@ export default function NotificationTemplatesPage(): ReactElement {
   });
   const templates = useMemo(() => query.data ?? [], [query.data]);
 
-  const categories = useMemo(
-    () => [...new Set(templates.map((view) => view.category))],
-    [templates],
-  );
+  // Categories by their registered English, each named by its first
+  // template's registration (text or a translation key).
+  const categoryTexts = useMemo(() => {
+    const byKey = new Map<string, NotificationTemplateView['category']>();
+    for (const view of templates) {
+      const key = templateDefaultText(view.category);
+      if (!byKey.has(key)) byKey.set(key, view.category);
+    }
+    return byKey;
+  }, [templates]);
+  const categories = useMemo(() => [...categoryTexts.keys()], [categoryTexts]);
+  const categoryLabel = (key: string) =>
+    words.category(categoryTexts.get(key) ?? key);
   const channelTypes = useMemo(
     () => [
       ...new Set(
@@ -93,7 +103,7 @@ export default function NotificationTemplatesPage(): ReactElement {
     const needle = search.trim().toLowerCase();
     return templates.filter(
       (view) =>
-        (category === ALL || view.category === category) &&
+        (category === ALL || templateDefaultText(view.category) === category) &&
         (channel === ALL ||
           view.channels.some((entry) => entry.type === channel)) &&
         (!needle ||
@@ -158,7 +168,7 @@ export default function NotificationTemplatesPage(): ReactElement {
             onChange={setCategory}
             options={categories.map((value) => ({
               value,
-              label: words.category(value),
+              label: categoryLabel(value),
             }))}
           />
           <Filter
@@ -187,15 +197,21 @@ export default function NotificationTemplatesPage(): ReactElement {
         >
           <div className='flex flex-col gap-6'>
             {categories
-              .filter((name) => visible.some((view) => view.category === name))
+              .filter((name) =>
+                visible.some(
+                  (view) => templateDefaultText(view.category) === name,
+                ),
+              )
               .map((name) => (
-                <section key={name} aria-label={words.category(name)}>
+                <section key={name} aria-label={categoryLabel(name)}>
                   <h2 className='mb-3 text-sm font-medium text-muted-foreground'>
-                    {words.category(name)}
+                    {categoryLabel(name)}
                   </h2>
                   <ul className='grid gap-3 md:grid-cols-2 xl:grid-cols-3'>
                     {visible
-                      .filter((view) => view.category === name)
+                      .filter(
+                        (view) => templateDefaultText(view.category) === name,
+                      )
                       .map((view) => (
                         <li key={view.id} className='min-w-0'>
                           <TemplateCard

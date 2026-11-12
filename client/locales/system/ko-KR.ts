@@ -239,6 +239,11 @@ const systemKoKR: SystemResource = {
   'navigation.brandHome': 'NocoBase 홈',
   'navigation.brandApps': 'NocoBase 애플리케이션',
   'routeOverlay.close': '닫기',
+  'routeOverlay.discardTitle': '변경 사항을 버릴까요?',
+  'routeOverlay.discardDescription':
+    '변경 사항이 저장되지 않았으며 사라집니다.',
+  'routeOverlay.keepEditing': '계속 편집',
+  'routeOverlay.discard': '버리기',
   'status.deniedDescription': '{{label}}에 접근할 권한이 없습니다.',
   'status.routeFailedDescription':
     '{{packageName}}의 라우트 {{label}}을(를) 불러올 수 없습니다.',
@@ -503,6 +508,11 @@ const systemKoKR: SystemResource = {
     noResults: '결과가 없습니다',
     sortAscending: '오름차순',
     sortDescending: '내림차순',
+    sort: '정렬',
+    sortBy: '정렬 기준',
+    filters: '필터',
+    filtersApplied: '필터 · {{count}}',
+    selectPage: '이 페이지 모두 선택',
     hideColumn: '숨기기',
     view: '보기',
     toggleColumns: '열 표시 전환',

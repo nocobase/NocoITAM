@@ -29,13 +29,6 @@ function DialogOverlay({
   return (
     <DialogPrimitive.Backdrop
       data-slot='dialog-overlay'
-      // Base UI drops a nested dialog's backdrop, on the reasoning that the
-      // dialog it is nested in already dims the page. The record drawer is
-      // such a parent, and its own backdrop sits *behind* the drawer panel —
-      // so a dialog opened inside the drawer had nothing between it and the
-      // page it covers. Keep it: two backdrops read as depth, none reads as
-      // a bug.
-      forceRender
       className={cn(
         'fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
         className,
@@ -56,7 +49,9 @@ function DialogContent({
   const { t } = useTranslation();
   return (
     <DialogPortal>
-      <DialogOverlay />
+      {/* Base UI leaves out the backdrop of a dialog opened inside another one; render it anyway, so the layer below
+          takes no taps or clicks while this one is open (mobile.md M7.2). */}
+      <DialogOverlay forceRender />
       <DialogPrimitive.Popup
         data-slot='dialog-content'
         className={cn(
