@@ -91,3 +91,4 @@ Features and extensions belongs in System settings under the System category, al
 - The Notification plugin's template fields may be translation keys (`{ ns, key, defaultValue }`) since its 2.0.0-beta.7: `notification-template-text.ts` resolves them and groups categories by their registered English.
 - Chat attachments are limited by the default Drive disk's upload limit (`useFileUploadLimit`), not a constant of the Agents plugin, since its 2.0.0-beta.11.
 - `react-hook-form` is a dev dependency only for the template's route overlay test.
+- The template's data change hooks (`use-data-changes.ts`, the `scopes` of `useListData`) serve only the pages built on `useListData`: the settings users and roles pages, which came with the template. ITAM's business lists use their own tables and React Query, and a write invalidates the `['itam']` queries, which refreshes every view of the data already; they are not to be moved onto the template's table or hooks.
