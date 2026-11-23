@@ -51,7 +51,7 @@ import { unrestrictedImpact } from './delete-parts.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
 import { normalizeSerial } from './device-sources.js';
-import { lifecycleRefusal } from './lifecycles.js';
+import { lifecycleRefusal, boundLifecycleIn } from './lifecycles.js';
 import { DEVICE_LIFECYCLE } from '../../lifecycles/devices.js';
 
 /**
@@ -337,6 +337,8 @@ const LIFECYCLE_FIELDS = new Set([
   // The lifecycle's own (2026-10-19): only the runtime writes them.
   'statusChangedAt',
   'lifecycleVersion',
+  // The definition the record is bound to: runtime.create() alone writes it.
+  'lifecycleDefinition',
 ]);
 
 /** What the purchase order decides for a device that came in through one. */
@@ -483,7 +485,14 @@ export function createDeviceService(
     input: JsonObject = {},
   ): Promise<DeviceStatus> => {
     try {
-      const result = await lifecycles.fire(DEVICE_LIFECYCLE, id, transition, {
+      // On the definition the record is bound to (2026-11-23).
+      const bound = await boundLifecycleIn(
+        lifecycles,
+        connection,
+        DEVICE_LIFECYCLE,
+        id,
+      );
+      const result = await lifecycles.fire(bound, id, transition, {
         actor: context.actorId ? { id: context.actorId } : SYSTEM_ACTOR,
         input,
         transaction: connection,

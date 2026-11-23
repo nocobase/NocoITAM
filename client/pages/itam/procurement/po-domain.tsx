@@ -453,12 +453,13 @@ function PurchaseOrderActions({
             id='submit-approver'
             reference={{
               collection: 'approvers',
-              filter: { subject: 'purchaseOrder' },
+              // The range the order was created under (2026-11-23).
+              filter: { subject: 'purchaseOrder', recordId: text(record.id) },
             }}
             value={approverId}
             onChange={setApproverId}
           />
-          <ApproverHint subject='purchaseOrder' />
+          <ApproverHint subject='purchaseOrder' recordId={text(record.id)} />
         </div>
       </ConfirmDialog>
       <ConfirmDialog

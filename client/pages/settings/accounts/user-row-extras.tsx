@@ -5,25 +5,24 @@ import type { ManagedUser } from '@nocobase/app-plugin-users/client/user-client'
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 
-import { Button } from '#components/ui/button';
+import type { RowAction } from '#components/row-actions';
 import { useUserPermission } from '../hooks.js';
 import { ConfirmAction } from '../shared.js';
 import { errorReason, errorStatus, useAdminText } from '../common/hooks.js';
 import { useUsersClient } from './data.js';
 
 /**
- * A row's Reset password and Delete, buttons beside the page's own (Disable,
- * Revoke sessions) and the same size as theirs: `items` the buttons,
- * `dialogs` what they open, `offered` whether there is any. Deleting oneself
- * the server refuses, and the dialog says so.
+ * A row's Reset password and Delete, items of the row's "⋮" menu after the
+ * page's own (Disable, Revoke sessions; template 1.0.0-beta.99): `actions`
+ * the items, Delete last as a destructive one, `dialogs` what they open.
+ * Deleting oneself the server refuses, and the dialog says so.
  */
 export function useUserExtras(
   user: ManagedUser,
   reload: () => void,
 ): {
-  readonly items: ReactNode;
+  readonly actions: readonly (RowAction | false)[];
   readonly dialogs: ReactNode;
-  readonly offered: boolean;
 } {
   const { text } = useAdminText();
   const location = useLocation();
@@ -65,39 +64,29 @@ export function useUserExtras(
       setBusy(false);
     }
   };
-  const items = (
-    <>
-      {canReset && (
-        <Button
-          variant='outline'
-          size='xs'
-          nativeButton={false}
-          render={
-            <Link
-              to={{
-                pathname: `${encodeURIComponent(user.id)}/password`,
-                search: location.search,
-              }}
-            />
-          }
-        >
-          {text('users.actions.password')}
-        </Button>
-      )}
-      {canDelete && (
-        <Button
-          variant='outline'
-          size='xs'
-          onClick={() => {
-            setError(undefined);
-            setDeleting(true);
+  const actions: readonly (RowAction | false)[] = [
+    canReset && {
+      key: 'password',
+      label: text('users.actions.password'),
+      render: (
+        <Link
+          to={{
+            pathname: `${encodeURIComponent(user.id)}/password`,
+            search: location.search,
           }}
-        >
-          {text('users.actions.delete')}
-        </Button>
-      )}
-    </>
-  );
+        />
+      ),
+    },
+    canDelete && {
+      key: 'delete',
+      label: text('users.actions.delete'),
+      destructive: true,
+      onClick: () => {
+        setError(undefined);
+        setDeleting(true);
+      },
+    },
+  ];
   const dialogs = canDelete && (
     <ConfirmAction
       open={deleting}
@@ -110,5 +99,5 @@ export function useUserExtras(
       onConfirm={() => void remove()}
     />
   );
-  return { items, dialogs, offered: canReset || canDelete };
+  return { actions, dialogs };
 }

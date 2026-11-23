@@ -3221,10 +3221,11 @@ export function createDemoService(dependencies: {
               const day = String(first.purchaseDate);
               const at = new Date(`${day}T09:00:00`);
               const orderId = crypto.randomUUID();
-              await database
-                .query()
-                .insertInto('purchaseOrders')
-                .values({
+              // Through the lifecycle, so the order is bound and has its
+              // parameter snapshot (2026-11-23); written straight into the
+              // table before. Unwrapped: the prices are converted already.
+              await dependencies.procurement.recordCompleted(
+                {
                   id: orderId,
                   orderNo: await dependencies.numbering.next('purchaseOrder'),
                   reason: 'other',
@@ -3236,7 +3237,6 @@ export function createDemoService(dependencies: {
                     0,
                   ),
                   currency: asText(first.currency) ?? null,
-                  status: 'completed',
                   orderedAt: day,
                   // The last delivery closed it.
                   expectedAt: asText(batch.at(-1)?.purchaseDate) ?? day,
@@ -3245,8 +3245,10 @@ export function createDemoService(dependencies: {
                   createdById: buyer,
                   createdAt: at,
                   updatedAt: at,
-                })
-                .execute();
+                },
+                buyer,
+                at,
+              );
               await track('purchaseOrders', { id: orderId });
               historicalOrderIds.add(orderId);
               // Its timeline, as the order flow writes it (2026-10-30): it

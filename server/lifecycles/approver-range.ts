@@ -32,10 +32,13 @@ export interface ApproverRangeParameters {
 }
 
 /**
- * The range's parameter group under `key`. Read live, when a request is
- * submitted and when the picker lists the candidates; a request already
- * waiting keeps the approver it asked. Never rename a key once stored, and
- * raise `schemaVersion` only with a migration of the stored versions.
+ * The range's parameter group under `key`. Since lifecycle 0.1.0-beta.6
+ * (2026-11-23) a request freezes the range in force when it is created, and
+ * its submission and its approver picker read that snapshot; 设置 → 流程
+ * saves the range as the lifecycle's configuration, kept under the
+ * lifecycle's name, for requests created afterwards. Snapshots name this
+ * `key` as each value's group: never rename it, and raise `schemaVersion`
+ * only with a new version of the lifecycle.
  */
 export function approverRangeGroup(key: string): ParameterGroup {
   return {

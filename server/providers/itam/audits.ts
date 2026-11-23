@@ -33,7 +33,7 @@ import {
   AUDIT_TASK_LIFECYCLE,
   type AuditTaskState,
 } from '../../lifecycles/audit-tasks.js';
-import { lifecycleRefusal } from './lifecycles.js';
+import { lifecycleRefusal, boundLifecycleIn } from './lifecycles.js';
 import { today } from './dates.js';
 
 /**
@@ -208,6 +208,8 @@ const LIFECYCLE_FIELDS = new Set([
   'status',
   'statusChangedAt',
   'lifecycleVersion',
+  // The definition the record is bound to: runtime.create() alone writes it.
+  'lifecycleDefinition',
   'expectedCount',
   'countedCount',
   'differenceCount',
@@ -317,16 +319,18 @@ export function createAuditService(dependencies: {
     const id = String(task.id);
     let next: AuditTaskState;
     try {
-      const result = await lifecycles.fire(
+      // On the definition the record is bound to (2026-11-23).
+      const bound = await boundLifecycleIn(
+        lifecycles,
+        connection,
         AUDIT_TASK_LIFECYCLE,
         id,
-        transition,
-        {
-          actor: { id: context.actorId },
-          input,
-          transaction: connection,
-        },
       );
+      const result = await lifecycles.fire(bound, id, transition, {
+        actor: { id: context.actorId },
+        input,
+        transaction: connection,
+      });
       next = result.record.status as AuditTaskState;
     } catch (error) {
       throw lifecycleRefusal(error);

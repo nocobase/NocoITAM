@@ -37,7 +37,7 @@ import type { HistoryService } from './history.js';
 import { countRows, reference, unrestrictedImpact } from './delete-parts.js';
 import type { EntitlementService } from './entitlements.js';
 import type { ApproverDirectory } from './approvers.js';
-import { lifecycleRefusal } from './lifecycles.js';
+import { lifecycleRefusal, boundLifecycleIn } from './lifecycles.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
 import type { StockService } from './stock.js';
@@ -197,6 +197,8 @@ const LIFECYCLE_FIELDS = new Set([
   'status',
   'statusChangedAt',
   'lifecycleVersion',
+  // The definition the record is bound to: runtime.create() alone writes it.
+  'lifecycleDefinition',
   'disposalNo',
   'deviceCount',
   'bookValueTotal',
@@ -275,7 +277,14 @@ export function createDisposalService(dependencies: {
     const id = String(disposal.id);
     let next: DisposalState;
     try {
-      const result = await lifecycles.fire(DISPOSAL_LIFECYCLE, id, transition, {
+      // On the definition the record is bound to (2026-11-23).
+      const bound = await boundLifecycleIn(
+        lifecycles,
+        connection,
+        DISPOSAL_LIFECYCLE,
+        id,
+      );
+      const result = await lifecycles.fire(bound, id, transition, {
         actor: { id: context.actorId },
         input,
         transaction: connection,
@@ -800,14 +809,18 @@ export function createDisposalService(dependencies: {
     async submit(id, approverId, context, conditions) {
       // Asked before the transaction opens: who holds which permission set
       // is read outside SQLite's one connection.
-      if (approverId && !(await approvers.mayApprove('disposal', approverId)))
+      // Against the range the disposal was created under (2026-11-23).
+      if (
+        approverId &&
+        !(await approvers.mayApprove('disposal', approverId, id))
+      )
         throw new BusinessRuleError(
           'Choose an approver from the range set for disposals',
           'APPROVER_NOT_IN_RANGE',
         );
       if (
         approverId === context.actorId &&
-        (await approvers.othersMayApprove('disposal', approverId))
+        (await approvers.othersMayApprove('disposal', approverId, id))
       )
         throw new BusinessRuleError(
           'Ask someone else to approve your own request',

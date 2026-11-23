@@ -2844,7 +2844,7 @@ const deDE: AppResource = {
         'Der Ablauf ist vom System festgelegt und kann hier nur angesehen werden; wer welchen Schritt ausführen darf, setzt das System ebenfalls durch.',
       approvers: 'Wer freigeben darf',
       approversHint:
-        'Einreichende wählen die freigebende Person aus diesen Rollen und Personen; eine genügt. Ist niemand gewählt, kann jede freigabeberechtigte Person gewählt werden. Eine Änderung gilt für die nächsten Einreichungen; bereits eingereichte Anfragen behalten ihre freigebende Person.',
+        'Einreichende wählen die freigebende Person aus diesen Rollen und Personen; eine genügt. Ist niemand gewählt, kann jede freigabeberechtigte Person gewählt werden. Eine Änderung gilt für danach erstellte Anfragen; bestehende Anfragen, auch Entwürfe, behalten den Bereich, mit dem sie erstellt wurden.',
       byRole: 'Rollen',
       byPerson: 'Personen',
       choose: 'Auswählen…',

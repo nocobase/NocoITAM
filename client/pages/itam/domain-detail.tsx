@@ -1,7 +1,7 @@
 import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
+import { EllipsisVertical, Trash2 } from 'lucide-react';
 import {
   Fragment,
   useContext,
@@ -415,7 +415,7 @@ export function DomainDetailPage({
                       />
                     }
                   >
-                    <MoreHorizontal />
+                    <EllipsisVertical />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='end'>
                     <DropdownMenuItem

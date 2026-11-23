@@ -2827,7 +2827,7 @@ const messages = {
         'The flow is defined by the system and can only be viewed here; who may take each step is enforced by it too.',
       approvers: 'Who may approve',
       approversHint:
-        'A submitter chooses the approver from these roles and people; any one of them is enough. With none chosen, anyone who may approve can be chosen. A change applies to the next submissions; requests already submitted keep their approver.',
+        'A submitter chooses the approver from these roles and people; any one of them is enough. With none chosen, anyone who may approve can be chosen. A change applies to requests created afterwards; existing requests, drafts included, keep the range they were created with.',
       byRole: 'Roles',
       byPerson: 'People',
       choose: 'Choose…',

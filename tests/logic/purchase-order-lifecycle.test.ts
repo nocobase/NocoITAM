@@ -32,10 +32,11 @@ function setup(options: { approvals?: Row[]; lines?: number } = {}) {
       retries: 'clock',
     },
   );
-  // An order already in a state: the kit creates every record in the
-  // initial one, and `update` places it where the test starts.
-  const order = ({ status, ...values }: Row = {}) => {
-    const record = kit.create({
+  // An order already in a state: created through the runtime, which starts
+  // it in the initial state and freezes its parameter snapshot (lifecycle
+  // 0.1.0-beta.6, 2026-11-23), and `update` places it where the test starts.
+  const order = async ({ status, ...values }: Row = {}) => {
+    const record = await kit.start({
       orderNo: 'PO-000001',
       description: 'Laptops',
       ownerId: 'mia',
@@ -63,11 +64,11 @@ describe('purchase order lifecycle', () => {
     const empty = setup({ lines: 0 });
     expect(
       await refusal(
-        empty.kit.fire(empty.order(), 'submit', {}, { actor: 'mia' }),
+        empty.kit.fire(await empty.order(), 'submit', {}, { actor: 'mia' }),
       ),
     ).toMatchObject({ code: 'GUARD_REJECTED', rule: 'NO_LINES' });
     const { kit, order } = setup();
-    const draft = order();
+    const draft = await order();
     expect(
       await refusal(kit.fire(draft, 'submit', {}, { actor: 'sam' })),
     ).toMatchObject({ code: 'GUARD_REJECTED', rule: 'NOT_OWNER' });
@@ -77,7 +78,7 @@ describe('purchase order lifecycle', () => {
 
   it('tells the approver once submitted, retrying a failed delivery', async () => {
     const { kit, sent, deliver, order } = setup();
-    const draft = order();
+    const draft = await order();
     deliver.mockRejectedValueOnce(new Error('inbox unreachable'));
     await kit.fire(
       draft,
@@ -103,7 +104,7 @@ describe('purchase order lifecycle', () => {
 
   it('is decided only by the approver it names, who tells the owner in their own words', async () => {
     const { kit, approvals, sent, order } = setup();
-    const waiting = order({ status: 'pendingApproval' });
+    const waiting = await order({ status: 'pendingApproval' });
     approvals.push({ status: 'pending', approverIds: ['ann'] });
     expect(
       await refusal(kit.fire(waiting, 'approve', {}, { actor: 'sam' })),
@@ -130,7 +131,7 @@ describe('purchase order lifecycle', () => {
 
   it('is ordered, received in part and then in full, with the dates it states', async () => {
     const { kit, order } = setup();
-    const approved = order({ status: 'approved' });
+    const approved = await order({ status: 'approved' });
     await kit.fire(
       approved,
       'order',
@@ -156,8 +157,11 @@ describe('purchase order lifecycle', () => {
     expect(await kit.available(approved, 'mia')).toEqual([]);
     // Nothing is received before it is ordered.
     expect(
-      (await refusal(kit.fire(order({ status: 'approved' }), 'complete', {})))
-        .code,
+      (
+        await refusal(
+          kit.fire(await order({ status: 'approved' }), 'complete', {}),
+        )
+      ).code,
     ).toBe('INVALID_STATE');
   });
 
@@ -167,7 +171,7 @@ describe('purchase order lifecycle', () => {
         { status: 'approved', approverIds: ['ann'], decidedById: 'ann' },
       ],
     });
-    const ordered = order({ status: 'ordered' });
+    const ordered = await order({ status: 'ordered' });
     expect(
       await refusal(kit.fire(ordered, 'cancel', {}, { actor: 'mia' })),
     ).toMatchObject({ code: 'INVALID_INPUT', field: 'cancelReason' });
@@ -191,7 +195,7 @@ describe('purchase order lifecycle', () => {
         (
           await refusal(
             kit.fire(
-              order({ status }),
+              await order({ status }),
               'cancel',
               { cancelReason: 'x' },
               { actor: 'mia' },

@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Check,
   ChevronDown,
-  MoreHorizontal,
+  EllipsisVertical,
   Package,
   PackageCheck,
   Sparkles,
@@ -123,7 +123,7 @@ function WhyDisabled({
   );
 }
 
-/** A proposal's other actions (更换, 不需要) behind ⋯ (2026-10-28). */
+/** A proposal's other actions (更换, 不需要) behind ⋮ (2026-10-28; ⋮ since template 1.0.0-beta.99). */
 function MoreMenu({
   disabled,
   children,
@@ -146,7 +146,7 @@ function MoreMenu({
           />
         }
       >
-        <MoreHorizontal />
+        <EllipsisVertical />
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-auto min-w-32'>
         <DropdownMenuGroup>{children}</DropdownMenuGroup>

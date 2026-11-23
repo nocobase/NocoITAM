@@ -29,10 +29,12 @@ function setup(options: { readonly approvals?: Row[] } = {}) {
     },
     retries: 'clock',
   });
-  // A disposal already in a state: the kit creates every record in the
-  // initial one, and `update` places it where the test starts.
-  const draft = ({ status, ...values }: Row = {}) => {
-    const record = kit.create({
+  // A disposal already in a state: created through the runtime, which
+  // starts it in the initial state and freezes its parameter snapshot
+  // (lifecycle 0.1.0-beta.6, 2026-11-23), and `update` places it where the
+  // test starts.
+  const draft = async ({ status, ...values }: Row = {}) => {
+    const record = await kit.start({
       disposalNo: 'DP-000001',
       description: 'Old laptops',
       ownerId: 'mia',
@@ -55,11 +57,11 @@ const refusal = async (work: Promise<unknown>) => {
 describe('disposal lifecycle', () => {
   it('lets only its owner or writer submit it, and only with devices listed', async () => {
     const { kit, draft } = setup();
-    const empty = draft({ deviceCount: 0 });
+    const empty = await draft({ deviceCount: 0 });
     expect(
       await refusal(kit.fire(empty, 'submit', {}, { actor: 'mia' })),
     ).toEqual({ code: 'GUARD_REJECTED', rule: 'NO_DEVICES' });
-    const listed = draft();
+    const listed = await draft();
     expect(
       await refusal(kit.fire(listed, 'submit', {}, { actor: 'sam' })),
     ).toEqual({ code: 'GUARD_REJECTED', rule: 'NOT_OWNER' });
@@ -69,7 +71,7 @@ describe('disposal lifecycle', () => {
 
   it('tells the approver it waits on once submitted, and retries a failed delivery', async () => {
     const { kit, approvals, sent, deliver, draft } = setup();
-    const disposal = draft();
+    const disposal = await draft();
     approvals.push({
       status: 'pending',
       approverIds: ['ann'],
@@ -102,7 +104,7 @@ describe('disposal lifecycle', () => {
 
   it('is decided only by the approver it names, who tells the requester in their own words', async () => {
     const { kit, approvals, sent, draft } = setup();
-    const disposal = draft({ status: 'pendingApproval' });
+    const disposal = await draft({ status: 'pendingApproval' });
     approvals.push({
       status: 'pending',
       approverIds: ['ann'],
@@ -134,7 +136,7 @@ describe('disposal lifecycle', () => {
 
   it('cannot be decided with no request open', async () => {
     const { kit, draft } = setup();
-    const disposal = draft({ status: 'pendingApproval' });
+    const disposal = await draft({ status: 'pendingApproval' });
     expect(
       await refusal(kit.fire(disposal, 'approve', {}, { actor: 'ann' })),
     ).toEqual({ code: 'GUARD_REJECTED', rule: 'NOT_PENDING' });
@@ -146,11 +148,11 @@ describe('disposal lifecycle', () => {
         { status: 'approved', approverIds: ['ann'], decidedById: 'ann' },
       ],
     });
-    const open = draft();
+    const open = await draft();
     expect(
       (await refusal(kit.fire(open, 'execute', {}, { actor: 'mia' }))).code,
     ).toBe('INVALID_STATE');
-    const disposal = draft({ status: 'approved' });
+    const disposal = await draft({ status: 'approved' });
     expect(
       await refusal(kit.fire(disposal, 'execute', {}, { actor: 'sam' })),
     ).toEqual({ code: 'GUARD_REJECTED', rule: 'NOT_INVOLVED' });
@@ -173,12 +175,13 @@ describe('disposal lifecycle', () => {
 
   it('goes back to draft when its owner withdraws it', async () => {
     const { kit, draft } = setup();
-    const disposal = draft({ status: 'pendingApproval' });
+    const disposal = await draft({ status: 'pendingApproval' });
     expect(
       await refusal(kit.fire(disposal, 'withdraw', {}, { actor: 'ann' })),
     ).toEqual({ code: 'GUARD_REJECTED', rule: 'NOT_OWNER' });
     await kit.fire(disposal, 'withdraw', {}, { actor: 'mia' });
     expect(kit.get(disposal).status).toBe('draft');
-    expect(await kit.history(disposal)).toEqual(['withdraw']);
+    // Created through the runtime, its history starts with the creation.
+    expect(await kit.history(disposal)).toEqual(['$create', 'withdraw']);
   });
 });

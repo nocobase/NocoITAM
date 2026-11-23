@@ -14,16 +14,22 @@ import { useItamList } from '@/lib/itam/api';
  */
 export function ApproverHint({
   subject,
+  recordId,
   hint,
 }: {
   /** The kind of request, as the approver picker names it. */
   readonly subject: 'purchaseOrder' | 'disposal';
+  /**
+   * The request being submitted, whose own range is asked for (2026-11-23):
+   * a request keeps the range in force when it was created.
+   */
+  readonly recordId?: string;
   /** What picking one means; nothing to say when left out. */
   readonly hint?: string;
 }): ReactElement | null {
   const { t } = useTranslation();
   const approvers = useItamList('itam/users/approvers', {
-    filter: { subject },
+    filter: recordId ? { subject, recordId } : { subject },
   });
   if (approvers.data && approvers.data.total === 0)
     return (

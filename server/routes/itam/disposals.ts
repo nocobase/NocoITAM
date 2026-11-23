@@ -156,7 +156,12 @@ export const disposalRoutes: AppApiRouteContribution<Application> =
                 { code: 'NOT_FOUND', message: 'Record not found' },
                 404,
               );
-            const view = await lifecycles.view(DISPOSAL_LIFECYCLE, disposalId, {
+            // The definition the disposal is bound to (2026-11-23).
+            const bound = await lifecycles.boundLifecycle(
+              DISPOSAL_LIFECYCLE,
+              disposalId,
+            );
+            const view = await lifecycles.view(bound, disposalId, {
               id: principalId(context),
             });
             return context.json({

@@ -9,6 +9,8 @@ import {
   type TransitionContext,
 } from '@nocobase/lifecycle';
 
+import { LIFECYCLE_DEFINITION_FIELD } from './definition-field.js';
+
 import { requestTitle } from '../providers/itam/approvals.js';
 import {
   approverRangeGroup,
@@ -221,10 +223,19 @@ const notifyDecision = defineEffect<PurchaseOrderTypes>({
 export const purchaseOrderLifecycle: Lifecycle<PurchaseOrderTypes> =
   defineLifecycle<PurchaseOrderTypes>({
     name: PURCHASE_ORDER_LIFECYCLE,
+    // Identity of a version of the process (lifecycle 0.1.0-beta.6,
+    // 2026-11-23): its key is its name, this is version 1, and each record
+    // names the definition that created it in `lifecycleDefinition`
+    // (202611230001_lifecycle_definition_bindings). Never change these.
+    key: PURCHASE_ORDER_LIFECYCLE,
+    version: 1,
+    collection: PURCHASE_ORDER_LIFECYCLE,
+    definitionField: LIFECYCLE_DEFINITION_FIELD,
     initial: 'draft',
     parameters: { approverRange: DEFAULT_APPROVER_RANGE },
+    // Frozen into each record's snapshot when it is created (lifecycle
+    // 0.1.0-beta.6, 2026-11-23; read live before).
     parameterConfiguration: {
-      readMode: 'live',
       groups: [purchaseOrderApproverRange],
     },
     states: [

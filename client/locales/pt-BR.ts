@@ -2830,7 +2830,7 @@ const ptBR: AppResource = {
         'O fluxo é definido pelo sistema e só pode ser visualizado aqui; quem pode executar cada etapa também é controlado por ele.',
       approvers: 'Quem pode aprovar',
       approversHint:
-        'Um solicitante escolhe o aprovador entre estas funções e pessoas; basta qualquer um deles. Se nenhum for escolhido, qualquer pessoa que possa aprovar pode ser escolhida. Uma alteração vale para os próximos envios; as solicitações já enviadas mantêm seu aprovador.',
+        'Um solicitante escolhe o aprovador entre estas funções e pessoas; basta qualquer um deles. Se nenhum for escolhido, qualquer pessoa que possa aprovar pode ser escolhida. Uma alteração vale para as solicitações criadas depois; as existentes, inclusive rascunhos, mantêm o escopo com que foram criadas.',
       byRole: 'Funções',
       byPerson: 'Pessoas',
       choose: 'Escolher…',
