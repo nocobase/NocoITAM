@@ -25,7 +25,7 @@ import {
 } from './errors.js';
 import { REPAIR_LIFECYCLE } from '../../lifecycles/repairs.js';
 import type { HistoryService } from './history.js';
-import { lifecycleRefusal } from './lifecycles.js';
+import { lifecycleRefusal, boundLifecycleIn } from './lifecycles.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
 import { today } from './dates.js';
@@ -166,6 +166,8 @@ const LIFECYCLE_FIELDS = new Set([
   'deviceId',
   'statusChangedAt',
   'lifecycleVersion',
+  // The definition the record is bound to: runtime.create() alone writes it.
+  'lifecycleDefinition',
 ]);
 export function createRepairService(dependencies: {
   database: DatabaseManager;
@@ -193,7 +195,14 @@ export function createRepairService(dependencies: {
     input: JsonObject,
   ): Promise<void> => {
     try {
-      await lifecycles.fire(REPAIR_LIFECYCLE, id, transition, {
+      // On the definition the record is bound to (2026-11-23).
+      const bound = await boundLifecycleIn(
+        lifecycles,
+        connection,
+        REPAIR_LIFECYCLE,
+        id,
+      );
+      await lifecycles.fire(bound, id, transition, {
         actor: { id: context.actorId },
         input,
         transaction: connection,

@@ -493,12 +493,13 @@ function DisposalActions({
             id='disposal-approver'
             reference={{
               collection: 'approvers',
-              filter: { subject: 'disposal' },
+              // The range the disposal was created under (2026-11-23).
+              filter: { subject: 'disposal', recordId: text(record.id) },
             }}
             value={approverId}
             onChange={setApproverId}
           />
-          <ApproverHint subject='disposal' />
+          <ApproverHint subject='disposal' recordId={text(record.id)} />
         </div>
       </ConfirmDialog>
       <ConfirmDialog

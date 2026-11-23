@@ -6,6 +6,8 @@ import {
   type LifecycleRecord,
 } from '@nocobase/lifecycle';
 
+import { LIFECYCLE_DEFINITION_FIELD } from './definition-field.js';
+
 import type { ItamNotifier } from '../providers/itam/notifier.js';
 
 /**
@@ -95,6 +97,14 @@ const touched = ({ now }: { readonly now: Date }) => ({ updatedAt: now });
 export const auditTaskLifecycle: Lifecycle<AuditTaskTypes> =
   defineLifecycle<AuditTaskTypes>({
     name: AUDIT_TASK_LIFECYCLE,
+    // Identity of a version of the process (lifecycle 0.1.0-beta.6,
+    // 2026-11-23): its key is its name, this is version 1, and each record
+    // names the definition that created it in `lifecycleDefinition`
+    // (202611230001_lifecycle_definition_bindings). Never change these.
+    key: AUDIT_TASK_LIFECYCLE,
+    version: 1,
+    collection: AUDIT_TASK_LIFECYCLE,
+    definitionField: LIFECYCLE_DEFINITION_FIELD,
     initial: 'notStarted',
     states: [
       'notStarted',

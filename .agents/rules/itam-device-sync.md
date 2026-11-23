@@ -204,7 +204,7 @@ product or in release notes, until it is listed here.
   MDM 核对 column header (查看全部), empty or not, since 2026-10-14); the
   settings tab's 核对规则 card (`deviceSync` settings key).
 - **MDM 核对's layout** (2026-10-21): each row ends in one button and a
-  "···" menu (`RowActions`), so the last column stays in view at 1280 px.
+  "⋮" menu (its own `RowActions` in `device-sync.tsx`), so the last column stays in view at 1280 px.
   An action that opens a device — 查看, or one of its dialogs (`?do=`:
   调拨, 标记丢失, …) — opens it in the record drawer (2026-10-22), the
   dialog over it there, so the list stays behind.

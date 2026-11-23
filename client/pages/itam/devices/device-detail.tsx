@@ -6,7 +6,7 @@ import {
   CheckCheck,
   Hammer,
   Handshake,
-  MoreHorizontal,
+  EllipsisVertical,
   PowerOff,
   Recycle,
   Search,
@@ -535,7 +535,7 @@ export default function DeviceDetailPage(): ReactElement {
                     />
                   }
                 >
-                  <MoreHorizontal />
+                  <EllipsisVertical />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end'>
                   {/* Repair / disposal open their forms with this device

@@ -39,7 +39,7 @@ import {
 import type { HistoryService } from './history.js';
 import { countRows, reference, unrestrictedImpact } from './delete-parts.js';
 import type { ApproverDirectory } from './approvers.js';
-import { lifecycleRefusal } from './lifecycles.js';
+import { lifecycleRefusal, boundLifecycleIn } from './lifecycles.js';
 import type { EntitlementService } from './entitlements.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
@@ -123,6 +123,14 @@ export interface ProcurementService {
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<Row>;
+  /**
+   * An order the demo shows as received long ago (2026-11-23): created
+   * through the lifecycle, so it is bound to its definition and keeps its
+   * parameter snapshot, then closed as `completed` in the same transaction
+   * without the steps between, which a historical order never went through
+   * here. `values` are the order's own fields; its state is not among them.
+   */
+  recordCompleted(values: Row, actorId: string, at: Date): Promise<void>;
   update(
     id: string,
     input: Row,
@@ -218,6 +226,8 @@ const LIFECYCLE_FIELDS = new Set([
   'status',
   'statusChangedAt',
   'lifecycleVersion',
+  // The definition the record is bound to: runtime.create() alone writes it.
+  'lifecycleDefinition',
   'orderNo',
   'estimatedTotal',
   'orderedAt',
@@ -365,12 +375,18 @@ export function createProcurementService(deps: {
     const id = String(order.id);
     let next: PurchaseOrderState;
     try {
-      const result = await lifecycles.fire(
+      // On the definition the record is bound to (2026-11-23).
+      const bound = await boundLifecycleIn(
+        lifecycles,
+        connection,
         PURCHASE_ORDER_LIFECYCLE,
         id,
-        transition,
-        { actor: { id: context.actorId }, input, transaction: connection },
       );
+      const result = await lifecycles.fire(bound, id, transition, {
+        actor: { id: context.actorId },
+        input,
+        transaction: connection,
+      });
       next = result.record.status as PurchaseOrderState;
     } catch (error) {
       throw lifecycleRefusal(error);
@@ -918,6 +934,25 @@ export function createProcurementService(deps: {
       return shape((await findRaw(id)) ?? {}, conditions);
     },
 
+    async recordCompleted(values, actorId, at) {
+      const id = str(values.id);
+      await database.transaction(async (connection) => {
+        await lifecycles
+          .create(PURCHASE_ORDER_LIFECYCLE, values as JsonObject, {
+            actor: { id: actorId },
+            transaction: connection,
+          })
+          .catch((error: unknown) => {
+            throw lifecycleRefusal(error);
+          });
+        await connection.query
+          .updateTable('purchaseOrders')
+          .set({ status: 'completed', statusChangedAt: at })
+          .where('id', '=', id)
+          .execute();
+      });
+    },
+
     async update(id, input, context, conditions) {
       const blocked = Object.keys(input).filter((field) =>
         LIFECYCLE_FIELDS.has(field),
@@ -1293,7 +1328,8 @@ export function createProcurementService(deps: {
       // 2026-10-19).
       if (
         approverId &&
-        !(await approvers.mayApprove('purchaseOrder', approverId))
+        // Against the range the order was created under (2026-11-23).
+        !(await approvers.mayApprove('purchaseOrder', approverId, id))
       )
         throw new BusinessRuleError(
           'Choose an approver from the range set for purchase orders',
@@ -1301,7 +1337,7 @@ export function createProcurementService(deps: {
         );
       if (
         approverId === context.actorId &&
-        (await approvers.othersMayApprove('purchaseOrder', approverId))
+        (await approvers.othersMayApprove('purchaseOrder', approverId, id))
       )
         throw new BusinessRuleError(
           'Ask someone else to approve your own request',

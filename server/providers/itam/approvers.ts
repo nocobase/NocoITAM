@@ -2,6 +2,8 @@ import { userAdministrationServiceToken } from '@nocobase/app-plugin-authenticat
 import { authorizationToken } from '@nocobase/app-plugin-authorization/server';
 import { databaseManagerToken } from '@nocobase/db';
 import {
+  configurationGroup,
+  LifecycleError,
   ParameterConfigurationError,
   resolveReviewerSelections,
   type LifecycleRuntime,
@@ -38,18 +40,28 @@ import {
  * submitter ask.
  */
 
-/** What each kind of request is approved under, and its range is kept as. */
+/**
+ * What each kind of request is approved under, and its range is kept as:
+ * since lifecycle 0.1.0-beta.6 (2026-11-23) the lifecycle's one
+ * configuration, under the lifecycle's name, of which the range group is
+ * the only part (202611230002_lifecycle_parameter_snapshots moved the
+ * ranges saved under the group's key there).
+ */
 const SUBJECTS = {
   disposal: {
     lifecycle: DISPOSAL_LIFECYCLE,
     resource: 'itam.disposals',
-    group: disposalApproverRange,
+    configuration: configurationGroup(DISPOSAL_LIFECYCLE, [
+      disposalApproverRange,
+    ]),
     startRequest: 'start:itam-disposal-approver-range',
   },
   purchaseOrder: {
     lifecycle: PURCHASE_ORDER_LIFECYCLE,
     resource: 'itam.purchaseOrders',
-    group: purchaseOrderApproverRange,
+    configuration: configurationGroup(PURCHASE_ORDER_LIFECYCLE, [
+      purchaseOrderApproverRange,
+    ]),
     startRequest: 'start:itam-purchase-order-approver-range',
   },
 } as const satisfies Record<ApprovalSubject, unknown>;
@@ -92,13 +104,30 @@ export interface ApproverDirectory {
    * range is everyone who may approve — the approval itself is checked when
    * the approver decides, as it always was.
    */
-  mayApprove(subject: ApprovalSubject, userId: string): Promise<boolean>;
+  mayApprove(
+    subject: ApprovalSubject,
+    userId: string,
+    /** The request being submitted, whose own range is read (2026-11-23). */
+    recordId?: string,
+  ): Promise<boolean>;
   /**
    * Somebody besides this person may be asked (2026-10-30): then a
    * submitter asks them rather than approving their own request. A lone
    * approver still may, or their requests could never be decided.
    */
-  othersMayApprove(subject: ApprovalSubject, userId: string): Promise<boolean>;
+  othersMayApprove(
+    subject: ApprovalSubject,
+    userId: string,
+    recordId?: string,
+  ): Promise<boolean>;
+  /**
+   * The range a request was created under, frozen in its snapshot; without
+   * one, the range a new request would take now (2026-11-23).
+   */
+  rangeFor(
+    subject: ApprovalSubject,
+    recordId?: string,
+  ): Promise<readonly ReviewerSelection[]>;
   /** 设置 → 流程: the approver range, and what it offers now. */
   approverRangeView(subject: ApprovalSubject): Promise<ApproverRangeView>;
   /**
@@ -281,7 +310,10 @@ export function createApproverDirectory(
       }));
   };
 
-  /** The approver range as it stands: the administrator's, or the default. */
+  /**
+   * The approver range as it stands for a new request: the administrator's,
+   * or the default.
+   */
   const currentRange = async (
     subject: ApprovalSubject,
   ): Promise<readonly ReviewerSelection[]> =>
@@ -292,6 +324,37 @@ export function createApproverDirectory(
         transactionHandle: undefined,
       })) as ApproverRangeParameters
     ).approverRange;
+  /**
+   * The range a request was created under (2026-11-23): its own snapshot,
+   * on the definition it is bound to. Without a request — a form creating
+   * one — the range as it stands; a request that does not exist reads the
+   * same, and its operation then says it is not found.
+   */
+  const rangeFor = async (
+    subject: ApprovalSubject,
+    recordId?: string,
+  ): Promise<readonly ReviewerSelection[]> => {
+    if (!recordId) return currentRange(subject);
+    const runtime = lifecycles();
+    let name: string;
+    try {
+      name = await runtime.boundLifecycle(
+        SUBJECTS[subject].lifecycle,
+        recordId,
+      );
+    } catch (error) {
+      if (error instanceof LifecycleError && error.code === 'RECORD_NOT_FOUND')
+        return currentRange(subject);
+      throw error;
+    }
+    return (
+      (await runtime.resolveParameters(name, {
+        record: { id: recordId },
+        purpose: 'preview',
+        transactionHandle: undefined,
+      })) as ApproverRangeParameters
+    ).approverRange;
+  };
   const holdersFor = (subject: ApprovalSubject) =>
     holdersOf(SUBJECTS[subject].resource, 'approve', '');
 
@@ -302,13 +365,18 @@ export function createApproverDirectory(
     approverRangeView: (subject) => approverRangeView(subject),
     saveApproverRange: (subject, input, actorId) =>
       saveApproverRange(subject, input, actorId),
-    async othersMayApprove(subject, userId) {
-      return (await directory.approversFor(subject, '')).some(
-        (candidate) => candidate.id !== userId,
-      );
+    rangeFor: (subject, recordId) => rangeFor(subject, recordId),
+    async othersMayApprove(subject, userId, recordId) {
+      return (
+        await directory.approversFor(
+          subject,
+          '',
+          await rangeFor(subject, recordId),
+        )
+      ).some((candidate) => candidate.id !== userId);
     },
-    async mayApprove(subject, userId) {
-      const range = await currentRange(subject);
+    async mayApprove(subject, userId, recordId) {
+      const range = await rangeFor(subject, recordId);
       if (range.some((selection) => selection.type === 'anyone')) return true;
       return (await directory.approversFor(subject, '', range)).some(
         (candidate) => candidate.id === userId,
@@ -350,7 +418,7 @@ export function createApproverDirectory(
     subject: ApprovalSubject,
   ): Promise<ApproverRangeView> {
     const [version, range, holders] = await Promise.all([
-      store.read(LIFECYCLE_PARAMETER_SCOPE, SUBJECTS[subject].group.key),
+      store.read(LIFECYCLE_PARAMETER_SCOPE, SUBJECTS[subject].lifecycle),
       currentRange(subject),
       holdersFor(subject),
     ]);
@@ -401,7 +469,7 @@ export function createApproverDirectory(
     try {
       await store.save({
         scope: LIFECYCLE_PARAMETER_SCOPE,
-        group: SUBJECTS[subject].group,
+        group: SUBJECTS[subject].configuration,
         values: { approverRange: range },
         expectedRevision: input.revision,
         requestId: input.requestId,
@@ -447,12 +515,12 @@ export async function startApproverRange(
     .permissionSets.list();
   if (!sets.some((set) => set.key === DEFAULT_APPROVER_SET)) return;
   for (const subject of Object.values(SUBJECTS)) {
-    if (await store.read(LIFECYCLE_PARAMETER_SCOPE, subject.group.key))
+    if (await store.read(LIFECYCLE_PARAMETER_SCOPE, subject.lifecycle))
       continue;
     try {
       await store.save({
         scope: LIFECYCLE_PARAMETER_SCOPE,
-        group: subject.group,
+        group: subject.configuration,
         values: {
           approverRange: [
             { group: 1, type: 'role', referenceId: DEFAULT_APPROVER_SET },

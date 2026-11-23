@@ -2821,7 +2821,7 @@ const idID: AppResource = {
         'Alur ditentukan oleh sistem dan hanya dapat dilihat di sini; siapa yang boleh menjalankan setiap langkah juga ditegakkan oleh sistem.',
       approvers: 'Siapa yang boleh menyetujui',
       approversHint:
-        'Pengaju memilih penyetuju dari peran dan orang ini; salah satunya sudah cukup. Jika tidak ada yang dipilih, siapa pun yang berwenang menyetujui dapat dipilih. Perubahan berlaku untuk pengajuan berikutnya; permintaan yang sudah diajukan tetap dengan penyetujunya.',
+        'Pengaju memilih penyetuju dari peran dan orang ini; salah satunya sudah cukup. Jika tidak ada yang dipilih, siapa pun yang berwenang menyetujui dapat dipilih. Perubahan berlaku untuk permintaan yang dibuat sesudahnya; permintaan yang sudah ada, termasuk draf, tetap memakai cakupan saat dibuat.',
       byRole: 'Peran',
       byPerson: 'Orang',
       choose: 'Pilih…',

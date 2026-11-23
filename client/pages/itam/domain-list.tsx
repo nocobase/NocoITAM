@@ -7,9 +7,7 @@ import {
   ChevronsUpDown,
   Columns3,
   List,
-  MoreHorizontal,
   Plus,
-  Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { useNavigate, useOutlet, useSearchParams } from 'react-router';
@@ -26,12 +24,7 @@ import { SegmentedControl } from '@/components/itam/segmented-control';
 import { RecordThumbnail } from '@/components/itam/record-image';
 import { FieldFilterMenu } from '@/components/itam/field-filter-menu';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { RowActions } from '#components/row-actions';
 import {
   apiErrorBody,
   useApi,
@@ -335,31 +328,21 @@ function DomainList({
   // record's own page, where every field edits in place, so a 编辑 dialog
   // here only repeated it (2026-10-06). The menu stays a menu, so the row
   // ends the same way on every list.
+  // The template's "⋮" row menu (template 1.0.0-beta.99, 2026-11-23).
   const rowActions = permissions.delete
     ? (row: ItamRecord) =>
         unrestricted || (domain.deletable?.(row, currentUserId) ?? true) ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant='ghost'
-                  size='icon-sm'
-                  aria-label={t('common.actions')}
-                />
-              }
-            >
-              <MoreHorizontal />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              <DropdownMenuItem
-                variant='destructive'
-                onClick={() => setDeleting(row)}
-              >
-                <Trash2 />
-                {t('actions.deleteObject', { object: objectLabel })}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <RowActions
+            label={t('common.actions')}
+            actions={[
+              {
+                key: 'delete',
+                label: t('actions.deleteObject', { object: objectLabel }),
+                destructive: true,
+                onClick: () => setDeleting(row),
+              },
+            ]}
+          />
         ) : null
     : undefined;
 

@@ -7,7 +7,7 @@ import {
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  MoreHorizontal,
+  EllipsisVertical,
   Paperclip,
   Pencil,
   Reply,
@@ -556,7 +556,7 @@ function Message({
                     />
                   }
                 >
-                  <MoreHorizontal />
+                  <EllipsisVertical />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end'>
                   <DropdownMenuItem

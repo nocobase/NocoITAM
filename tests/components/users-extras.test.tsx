@@ -1,6 +1,6 @@
 // What ITAM adds to NocoBase 3's prepared Users page
 // (client/pages/settings/accounts/, after NocoCRM's): the Invite button,
-// Reset password and Delete among a row's buttons, each offered only to
+// Reset password and Delete in a row's "⋮" menu, each offered only to
 // whoever holds the users plugin's action, and a refused deletion saying why.
 import { apiClientToken } from '@nocobase/app-client';
 import {
@@ -108,15 +108,18 @@ it('offers inviting, a password reset and deletion to whoever may', async () => 
       'href',
     ),
   ).toContain('/settings/users/invite');
-  // Beside the page's own Disable and Revoke sessions.
+  // In the row's "⋮" menu after the page's own Disable and Revoke sessions,
+  // Delete last (template 1.0.0-beta.99).
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Actions for Alice' }),
+  );
   expect(
-    screen
-      .getByRole('button', { name: users.actions.password })
-      .getAttribute('href'),
+    (
+      await screen.findByRole('menuitem', { name: users.actions.password })
+    ).getAttribute('href'),
   ).toContain('/settings/users/alice/password');
-  expect(
-    screen.getByRole('button', { name: users.actions.delete }),
-  ).toBeVisible();
+  const items = screen.getAllByRole('menuitem').map((item) => item.textContent);
+  expect(items.at(-1)).toBe(users.actions.delete);
 });
 
 it('deletes a user once confirmed, and says why when it is refused', async () => {
@@ -131,8 +134,9 @@ it('deletes a user once confirmed, and says why when it is refused', async () =>
       : new Response(null, { status: 204 }),
   );
   await screen.findByRole('link', { name: 'Alice' });
+  await user.click(screen.getByRole('button', { name: 'Actions for Alice' }));
   await user.click(
-    await screen.findByRole('button', { name: users.actions.delete }),
+    await screen.findByRole('menuitem', { name: users.actions.delete }),
   );
   const dialog = await screen.findByRole('alertdialog');
   expect(

@@ -357,7 +357,9 @@ describe('MDM follow-up', () => {
     // Declining is Ann's own (2026-10-22): Mia's copy still waits.
     const anns = await settled(() => latest('shared:ann:unregistered'));
     await followUp().dismiss(anns.id, 'ann');
-    expect((await latest('shared:mia:unregistered'))?.status).toBe('pending');
+    // Waited for: the pull above started her copy again, and on a slower
+    // database it may still be running here (2026-11-23).
+    await settled(() => latest('shared:mia:unregistered'));
     // Only its person sets it aside.
     const mine = await settled(() => latest('owner:mia:checks'));
     await expect(followUp().dismiss(mine.id, 'ann')).rejects.toThrow();

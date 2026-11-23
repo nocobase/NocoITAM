@@ -6,6 +6,8 @@ import {
   type TransitionContext,
 } from '@nocobase/lifecycle';
 
+import { LIFECYCLE_DEFINITION_FIELD } from './definition-field.js';
+
 /**
  * A repair's lifecycle (2026-10-19, after the disposals' and purchase
  * orders'). Its state is the repair's
@@ -90,6 +92,14 @@ const touched = ({ now }: { readonly now: Date }) => ({ updatedAt: now });
 export const repairLifecycle: Lifecycle<RepairTypes> =
   defineLifecycle<RepairTypes>({
     name: REPAIR_LIFECYCLE,
+    // Identity of a version of the process (lifecycle 0.1.0-beta.6,
+    // 2026-11-23): its key is its name, this is version 1, and each record
+    // names the definition that created it in `lifecycleDefinition`
+    // (202611230001_lifecycle_definition_bindings). Never change these.
+    key: REPAIR_LIFECYCLE,
+    version: 1,
+    collection: REPAIR_LIFECYCLE,
+    definitionField: LIFECYCLE_DEFINITION_FIELD,
     stateField: 'result',
     initial: 'inProgress',
     states: [

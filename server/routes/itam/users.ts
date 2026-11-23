@@ -131,16 +131,24 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
         // an Asset Manager who is the only one still asks themselves, as since
         // 2026-09-27, but with a colleague to ask, asks them. Asked for ids,
         // it reads names back, the reader's included.
+        // For a request already created (`filter[recordId]`), the range
+        // it was created under, which its submission is checked against
+        // (2026-11-23); for a new one, the range as it stands.
+        const range = await directory.rangeFor(
+          subject as ApprovalSubject,
+          url.searchParams.get('filter[recordId]') || undefined,
+        );
         const candidates = await directory.approversFor(
           subject as ApprovalSubject,
           url.searchParams.get('q') ?? '',
+          range,
         );
         const reader = principalId(context as unknown as ItamContext);
         const others = url.searchParams.has('ids')
           ? candidates
           : candidates.filter((candidate) => candidate.id !== reader);
         const anyOther = (
-          await directory.approversFor(subject as ApprovalSubject, '')
+          await directory.approversFor(subject as ApprovalSubject, '', range)
         ).some((candidate) => candidate.id !== reader);
         return context.json(listed(anyOther ? others : candidates));
       },

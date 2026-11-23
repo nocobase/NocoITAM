@@ -14,6 +14,7 @@ import {
 } from '@nocobase/service-provider';
 
 import { auditTaskLifecycle } from '../../lifecycles/audit-tasks.js';
+import { LIFECYCLE_DEFINITION_FIELD } from '../../lifecycles/definition-field.js';
 import { deviceLifecycle } from '../../lifecycles/devices.js';
 import { disposalLifecycle } from '../../lifecycles/disposals.js';
 import { purchaseOrderLifecycle } from '../../lifecycles/purchase-orders.js';
@@ -91,7 +92,8 @@ export function createItamLifecycleRuntime(dependencies: {
         ),
       notifier,
     }),
-    // 设置 → 报废流程's approver range, read live on every submission.
+    // 设置 → 流程 → 报废's approver range, frozen into each disposal's
+    // snapshot when it is created (2026-11-23; read live before).
     parameterConfiguration: {
       store: lifecycleParameterStore(database),
       scope: () => LIFECYCLE_PARAMETER_SCOPE,
@@ -115,7 +117,8 @@ export function createItamLifecycleRuntime(dependencies: {
         notifier,
       };
     },
-    // 设置 → 流程 → 采购's approver range, read live on every submission.
+    // 设置 → 流程 → 采购's approver range, frozen into each order's snapshot
+    // when it is created, as above.
     parameterConfiguration: {
       store: lifecycleParameterStore(database),
       scope: () => LIFECYCLE_PARAMETER_SCOPE,
@@ -128,6 +131,31 @@ export function createItamLifecycleRuntime(dependencies: {
   // Devices read nothing beyond the record and tell nobody.
   runtime.register(deviceLifecycle);
   return runtime;
+}
+
+/**
+ * The definition a record of the process `key` belongs to, read through the
+ * caller's transaction (lifecycle 0.1.0-beta.6, 2026-11-23): its
+ * `lifecycleDefinition`, which `runtime.create()` wrote. Each record
+ * operation fires on that name, never on the latest version's. Inside a
+ * transaction, since on SQLite its one connection is held and the runtime's
+ * own `boundLifecycle()` would read beside it.
+ */
+export async function boundLifecycleIn(
+  runtime: LifecycleRuntime,
+  connection: DatabaseConnection,
+  key: string,
+  id: string,
+): Promise<string> {
+  const collection = runtime.definition(runtime.group(key).latest).collection;
+  const row = await connection.query
+    .selectFrom(collection)
+    .select(['id', LIFECYCLE_DEFINITION_FIELD])
+    .where('id', '=', id)
+    .executeTakeFirst<Record<string, unknown>>();
+  // A missing record is left to the operation itself, which says so.
+  if (!row) return key;
+  return runtime.recordLifecycle(key, { ...row, id });
 }
 
 /**

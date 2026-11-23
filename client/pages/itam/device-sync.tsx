@@ -8,7 +8,7 @@ import {
   GitCompareArrows,
   type LucideIcon,
   Info,
-  MoreHorizontal,
+  EllipsisVertical,
   Settings2,
   Sparkles,
 } from 'lucide-react';
@@ -408,7 +408,7 @@ type RowAction = {
 
 /**
  * A row's actions on one line (2026-10-21): the one that settles it as a
- * button, the rest under "···", so the last column stays in view.
+ * button, the rest under "⋮", so the last column stays in view.
  */
 function RowActions({
   main,
@@ -446,7 +446,7 @@ function RowActions({
               />
             }
           >
-            <MoreHorizontal />
+            <EllipsisVertical />
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end'>
             {more.map((item) => (

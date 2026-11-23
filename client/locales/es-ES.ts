@@ -2845,7 +2845,7 @@ const esES: AppResource = {
         'El flujo lo define el sistema y aquí solo se puede consultar; el sistema también impone quién puede dar cada paso.',
       approvers: 'Quién puede aprobar',
       approversHint:
-        'Quien envía elige el aprobador entre estos roles y personas; basta con uno cualquiera. Si no se elige ninguno, se puede elegir a cualquiera que pueda aprobar. Un cambio se aplica a los envíos siguientes; las solicitudes ya enviadas conservan su aprobador.',
+        'Quien envía elige el aprobador entre estos roles y personas; basta con uno cualquiera. Si no se elige ninguno, se puede elegir a cualquiera que pueda aprobar. Un cambio se aplica a las solicitudes creadas después; las existentes, borradores incluidos, conservan el alcance con el que se crearon.',
       byRole: 'Roles',
       byPerson: 'Personas',
       choose: 'Elegir…',

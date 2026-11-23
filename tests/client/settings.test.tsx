@@ -21,7 +21,7 @@ vi.mock('../../client/pages/settings/accounts/user-extras.js', () => ({
   PendingInvitations: () => null,
 }));
 vi.mock('../../client/pages/settings/accounts/user-row-extras.js', () => ({
-  useUserExtras: () => ({ items: null, dialogs: null, offered: false }),
+  useUserExtras: () => ({ actions: [], dialogs: null }),
 }));
 import UserForm from '../../client/pages/settings/user-form.js';
 import UsersPage from '../../client/pages/settings/users.js';

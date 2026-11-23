@@ -2790,7 +2790,7 @@ const viVN: AppResource = {
         'Quy trình do hệ thống định nghĩa và chỉ có thể xem tại đây; ai được thực hiện từng bước cũng do hệ thống kiểm soát.',
       approvers: 'Ai có thể phê duyệt',
       approversHint:
-        'Người gửi chọn người phê duyệt từ các vai trò và người này; chỉ cần một người duyệt. Nếu không chọn ai, bất kỳ ai có quyền phê duyệt đều có thể được chọn. Thay đổi áp dụng cho các lần gửi tiếp theo; yêu cầu đã gửi giữ nguyên người phê duyệt.',
+        'Người gửi chọn người phê duyệt từ các vai trò và người này; chỉ cần một người duyệt. Nếu không chọn ai, bất kỳ ai có quyền phê duyệt đều có thể được chọn. Thay đổi chỉ áp dụng cho các yêu cầu tạo sau đó; yêu cầu đã tạo, kể cả bản nháp, giữ phạm vi lúc tạo.',
       byRole: 'Vai trò',
       byPerson: 'Người',
       choose: 'Chọn…',

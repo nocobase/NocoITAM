@@ -38,8 +38,10 @@ export function deliverPlanOutcome(
           title: plan.title,
           params: { planId: plan.id, decision },
         },
+        // A custom run input since Agents 2.0.0-beta.11 retired its own
+        // operation plans and their input type; the notice keeps its type.
         input: {
-          type: 'planDecided',
+          type: 'custom',
           actor: {
             kind: 'user',
             id: decider,

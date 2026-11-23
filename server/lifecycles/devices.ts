@@ -5,6 +5,8 @@ import {
   type TransitionContext,
 } from '@nocobase/lifecycle';
 
+import { LIFECYCLE_DEFINITION_FIELD } from './definition-field.js';
+
 import {
   CORRECTABLE_STATUSES,
   DEVICE_STATUSES,
@@ -74,6 +76,14 @@ const from = (operation: keyof typeof OPERATION_FROM) => [
 export const deviceLifecycle: Lifecycle<DeviceTypes> =
   defineLifecycle<DeviceTypes>({
     name: DEVICE_LIFECYCLE,
+    // Identity of a version of the process (lifecycle 0.1.0-beta.6,
+    // 2026-11-23): its key is its name, this is version 1, and each record
+    // names the definition that created it in `lifecycleDefinition`
+    // (202611230001_lifecycle_definition_bindings). Never change these.
+    key: DEVICE_LIFECYCLE,
+    version: 1,
+    collection: DEVICE_LIFECYCLE,
+    definitionField: LIFECYCLE_DEFINITION_FIELD,
     // A device enters the register in stock; receiving an order is the
     // check, so there is no state before it (2026-09-26).
     initial: 'inStock',

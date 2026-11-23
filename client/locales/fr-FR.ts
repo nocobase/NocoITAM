@@ -2841,7 +2841,7 @@ const frFR: AppResource = {
         'Le processus est défini par le système et ne peut qu’être consulté ici ; qui peut effectuer chaque étape est également imposé par lui.',
       approvers: 'Qui peut approuver',
       approversHint:
-        'Un demandeur choisit l’approbateur parmi ces rôles et personnes ; l’un d’eux suffit. Si aucun n’est choisi, toute personne habilitée à approuver peut être choisie. Une modification s’applique aux soumissions suivantes ; les demandes déjà soumises conservent leur approbateur.',
+        'Un demandeur choisit l’approbateur parmi ces rôles et personnes ; l’un d’eux suffit. Si aucun n’est choisi, toute personne habilitée à approuver peut être choisie. Une modification s’applique aux demandes créées ensuite ; les demandes existantes, brouillons compris, gardent le périmètre de leur création.',
       byRole: 'Rôles',
       byPerson: 'Personnes',
       choose: 'Choisir…',

@@ -41,7 +41,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   a correction, not a write.
 - A request's approver range (设置 → 流程; disposals 2026-10-18, purchase
   orders 2026-10-19) is its lifecycle's `approverRange` parameter, not an
-  `itamSettings` key — one group per kind (`server/lifecycles/approver-range.ts`).
+  `itamSettings` key — one group per kind (`server/lifecycles/approver-range.ts`),
+  frozen per request since 2026-11-23 (above).
   Who holds what — permission set members, an operation's holders, a range's
   candidates — is `server/providers/itam/approvers.ts`, keyed by the kind of
   request (`approversFor`, `mayApprove`), which the users route, both
@@ -49,6 +50,28 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   itself to its `SUBJECTS`. It is read
   before a transaction opens: permission sets are read through the
   authorization plugin, never on SQLite's one connection.
+- **Lifecycle versions and snapshots** (2026-11-23, `@nocobase/lifecycle`
+  0.1.0-beta.6). Each definition declares `key` (= its name), `version: 1`,
+  `collection` and `definitionField: 'lifecycleDefinition'`
+  (`server/lifecycles/definition-field.ts`); every row of the five tables
+  holds its definition's name (`202611230001_lifecycle_definition_bindings`
+  bound them all, since every row is a lifecycle record, `$create` or not).
+  Only `runtime.create()` writes the field: each service keeps it among its
+  `LIFECYCLE_FIELDS`, and a record is created through the runtime only — the
+  demo's historical orders too (`procurement.recordCompleted()`). A service
+  fires on the definition the record is bound to (`boundLifecycleIn()` in
+  `lifecycles.ts`, inside its transaction), a route outside one asks
+  `runtime.boundLifecycle()`. A change to a definition's behavior or its
+  parameters is a new version beside it (`references/lifecycle-versions.md`),
+  never an edit of version 1. The approver range is no longer read live: a
+  disposal or order freezes the range in force into its parameter snapshot
+  when it is created, its submission and its approver picker
+  (`filter[recordId]`) read that, and 设置 → 流程 saves the lifecycle's one
+  configuration under the lifecycle's name (`configurationGroup()`), which
+  only requests created afterwards take.
+  `202611230002_lifecycle_parameter_snapshots` moved the saved ranges there
+  and gave every existing request a snapshot: from its creation's recorded
+  usage (`recoveredFrom`), or the range at upgrade (`origin: 'upgrade'`).
 - `202610180001_disposal_lifecycle` was corrected after it was merged
   (2026-10-16), the one exception to "a merged migration is history": its
   backfill wrote `updatedAt` as it reads back (local text) into the zoned
